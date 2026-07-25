@@ -868,18 +868,21 @@ body.is-mac .header-bar,
     flex-direction: row;
     gap: 8px;
     padding: 6px;
-    background: var(--bg-main, #f0f7fc);
+    background: transparent;
     height: 100%;
+    width: clamp(480px, 45vw, 780px) !important;
+    min-width: 420px !important;
+    max-width: 58vw !important;
     box-sizing: border-box;
 }
 
 .io-section.three-card-io .card-panel {
-    flex: 1;
-    min-width: 0;
-    background: rgba(255, 255, 255, 0.68) !important;
+    flex: 1 1 0px;
+    min-width: 130px;
+    background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(22px) saturate(195%);
     -webkit-backdrop-filter: blur(22px) saturate(195%);
-    border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.8) !important;
     border-radius: 16px;
     overflow: hidden;
     display: flex;
@@ -899,9 +902,19 @@ body.is-mac .header-bar,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 10px;
-    background: var(--bg-panel-header, rgba(224, 240, 255, 0.3));
-    border-bottom: 1px solid var(--border, #e0f0ff);
+    padding: 6px 8px;
+    background: rgba(240, 248, 255, 0.5);
+    border-bottom: 1px solid rgba(220, 235, 250, 0.8);
+    flex-shrink: 0;
+}
+
+.io-section.three-card-io .panel-title {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .io-section.three-card-io .panel-textarea {
@@ -911,12 +924,17 @@ body.is-mac .header-bar,
     border: none;
     outline: none;
     padding: 8px 10px;
-    background: transparent;
-    color: var(--text-primary, #2a5a75);
+    background: transparent !important;
+    color: var(--text-primary, #2a5a75) !important;
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
     line-height: 1.5;
     box-sizing: border-box;
+}
+
+.io-panel-expected {
+    background: rgba(255, 255, 255, 0.78) !important;
+    color: var(--text-primary, #2a5a75) !important;
 }
 
 .terminal-body {

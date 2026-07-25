@@ -3668,7 +3668,18 @@ function initHeader() {
     document.getElementById('welcome-open').onclick = openFile;
     const welcomeFolderBtn = document.getElementById('welcome-open-folder');
     if (welcomeFolderBtn) {
-        welcomeFolderBtn.onclick = () => window.FileExplorer?.openFolderDialog?.();
+        welcomeFolderBtn.onclick = async () => {
+            if (window.FileExplorer) {
+                await window.FileExplorer.openFolderDialog();
+                if (window.FileExplorer.currentFolder) {
+                    const welcome = document.getElementById('welcome');
+                    if (welcome) welcome.style.display = 'none';
+                    if (!App.tabs || App.tabs.length === 0) {
+                        newFile();
+                    }
+                }
+            }
+        };
     }
 
     document.getElementById('btn-close').onclick = () => window.electronAPI?.closeWindow?.();

@@ -165,6 +165,53 @@ button:active,
     animation: liquidPulse 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+.tab:hover {
+    transform: translateY(-1px);
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease;
+}
+
+.explorer-item {
+    transition: background 0.18s ease, transform 0.15s ease;
+}
+
+.explorer-item:hover {
+    transform: translateX(2px);
+}
+
+.tree-arrow {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tree-node.expanded > .tree-item-head .tree-arrow {
+    transform: rotate(90deg);
+}
+
+@keyframes welcomeFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.welcome-box {
+    animation: welcomeFloat 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes runGlow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 22px rgba(76, 175, 80, 0.8);
+    }
+}
+
+.action-btn.running {
+    animation: runGlow 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* ============================================================================
  * REDUCED MOTION SUPPORT
  * ============================================================================ */

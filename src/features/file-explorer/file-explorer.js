@@ -626,6 +626,14 @@ const FileExplorer = {
 
                     await this.refreshTree();
                     this.saveState();
+                    if (!this.isOpen && typeof this.toggleSidebar === 'function') {
+                        this.toggleSidebar();
+                    }
+                    const welcome = document.getElementById('welcome');
+                    if (welcome) welcome.style.display = 'none';
+                    if (window.App && typeof window.App.updateUI === 'function') {
+                        window.App.updateUI();
+                    }
                 }
             } else {
                 console.warn('Electron API not available for folder dialog');
