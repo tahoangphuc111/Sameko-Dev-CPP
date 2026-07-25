@@ -26,6 +26,9 @@ try {
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
+    platform: process.platform,
+    isMac: process.platform === 'darwin',
+
     // File operations
     openFile: () => ipcRenderer.invoke('open-file-dialog'),
     saveFile: (data) => ipcRenderer.invoke('save-file', data),

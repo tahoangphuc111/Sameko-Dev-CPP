@@ -3626,6 +3626,12 @@ function updateUI() {
 // HEADER
 // ============================================================================
 function initHeader() {
+    const isMac = (window.electronAPI?.isMac) || (navigator.platform.includes('Mac') || navigator.userAgent.includes('Mac'));
+    if (isMac) {
+        document.body.classList.add('is-mac');
+        document.querySelector('.header-bar')?.classList.add('is-mac');
+    }
+
     document.getElementById('btn-new-tab').onclick = newFile;
     document.getElementById('btn-buildrun').onclick = buildRun;
     document.getElementById('btn-run-only').onclick = run;

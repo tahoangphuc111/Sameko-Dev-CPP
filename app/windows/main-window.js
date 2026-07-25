@@ -253,19 +253,24 @@ function createMainWindow() {
 
     // Load saved window bounds
     const savedBounds = getSafeWindowBounds(loadWindowBounds());
+    const isMac = process.platform === 'darwin';
     const windowOptions = {
         width: savedBounds?.width || WINDOW.DEFAULT_WIDTH,
         height: savedBounds?.height || WINDOW.DEFAULT_HEIGHT,
         x: savedBounds?.x,
         y: savedBounds?.y,
         frame: false,
+        titleBarStyle: isMac ? 'hiddenInset' : undefined,
+        trafficLightPosition: isMac ? { x: 12, y: 12 } : undefined,
         show: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(appRoot, 'preload.js')
         },
-        icon: path.join(appRoot, 'src', 'assets', 'icon.ico'),
+        icon: isMac
+            ? path.join(appRoot, 'src', 'assets', 'icon.icns')
+            : path.join(appRoot, 'src', 'assets', 'icon.ico'),
         backgroundColor: WINDOW.BACKGROUND_COLOR
     };
 
