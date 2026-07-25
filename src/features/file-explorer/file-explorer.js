@@ -2307,7 +2307,7 @@ const FileExplorer = {
                 </div>
                 <div class="note-dialog-footer">
                     <button class="note-dialog-btn note-dialog-cancel">Cancel</button>
-                    <button class="note-dialog-btn note-dialog-save">OK</button>
+                    <button class="note-dialog-btn note-dialog-save input-dialog-save">OK</button>
                 </div>
             </div>
         `;
@@ -2315,7 +2315,7 @@ const FileExplorer = {
         document.body.appendChild(overlay);
 
         const input = overlay.querySelector('.input-dialog-field');
-        const saveBtn = overlay.querySelector('.input-dialog-save');
+        const saveBtn = overlay.querySelector('.note-dialog-save') || overlay.querySelector('.input-dialog-save');
         const cancelBtn = overlay.querySelector('.note-dialog-cancel');
         const closeBtn = overlay.querySelector('.note-dialog-close');
 
@@ -2326,8 +2326,10 @@ const FileExplorer = {
 
         setTimeout(() => {
             window.focus();
-            input.focus();
-            input.select();
+            if (input) {
+                input.focus();
+                input.select();
+            }
         }, 80);
 
         const closeDialog = () => {
@@ -2335,24 +2337,27 @@ const FileExplorer = {
         };
 
         const submit = () => {
-            const value = input.value.trim();
+            const value = input ? input.value.trim() : '';
             if (value) {
                 callback(value);
             }
             closeDialog();
         };
 
-        saveBtn.onclick = submit;
-        cancelBtn.onclick = closeDialog;
-        closeBtn.onclick = closeDialog;
+        if (saveBtn) saveBtn.onclick = submit;
+        if (cancelBtn) cancelBtn.onclick = closeDialog;
+        if (closeBtn) closeBtn.onclick = closeDialog;
+        overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
 
-        input.onkeydown = (e) => {
-            if (e.key === 'Escape') {
-                closeDialog();
-            } else if (e.key === 'Enter') {
-                submit();
-            }
-        };
+        if (input) {
+            input.onkeydown = (e) => {
+                if (e.key === 'Escape') {
+                    closeDialog();
+                } else if (e.key === 'Enter') {
+                    submit();
+                }
+            };
+        }
     },
 
     /**
@@ -4087,6 +4092,7 @@ const FileExplorer = {
         saveBtn.onclick = createContest;
         cancelBtn.onclick = closeDialog;
         closeBtn.onclick = closeDialog;
+        overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
 
         nameInput.onkeydown = (e) => {
             if (e.key === 'Escape') closeDialog();
