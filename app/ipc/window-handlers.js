@@ -8,7 +8,7 @@
 
 const { ipcMain } = require('electron');
 const { IPC } = require('../shared/constants');
-const { minimizeWindow, toggleMaximize, closeWindow } = require('../windows/main-window');
+const { minimizeWindow, toggleMaximize, closeWindow, resizeWindow } = require('../windows/main-window');
 
 /**
  * Register all window-related IPC handlers
@@ -26,6 +26,18 @@ function registerHandlers() {
         closeWindow();
     });
 
+    ipcMain.handle(IPC.WINDOW.RESIZE, (event, payload = {}) => {
+        const allowedEdges = new Set(['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']);
+        const edge = String(payload.edge || '');
+        if (!allowedEdges.has(edge)) {
+            return { success: false, error: 'Invalid resize edge' };
+        }
+
+        const deltaX = Number(payload.deltaX) || 0;
+        const deltaY = Number(payload.deltaY) || 0;
+        const bounds = resizeWindow(edge, deltaX, deltaY);
+        return { success: true, bounds };
+    });
 
 }
 

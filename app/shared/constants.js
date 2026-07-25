@@ -64,6 +64,7 @@ const IPC = {
         MINIMIZE: 'window-minimize',
         MAXIMIZE: 'window-maximize',
         CLOSE: 'window-close',
+        RESIZE: 'window-resize',
     },
 
     // Settings
@@ -177,6 +178,8 @@ const COMPETITIVE_COMPANION = {
 const WINDOW = {
     DEFAULT_WIDTH: 1400,
     DEFAULT_HEIGHT: 900,
+    MIN_WIDTH: 900,
+    MIN_HEIGHT: 600,
     BACKGROUND_COLOR: '#1e1e1e',
 };
 

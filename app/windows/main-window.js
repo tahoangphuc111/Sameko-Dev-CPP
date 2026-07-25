@@ -257,6 +257,8 @@ function createMainWindow() {
     const windowOptions = {
         width: savedBounds?.width || WINDOW.DEFAULT_WIDTH,
         height: savedBounds?.height || WINDOW.DEFAULT_HEIGHT,
+        minWidth: WINDOW.MIN_WIDTH || 900,
+        minHeight: WINDOW.MIN_HEIGHT || 600,
         x: savedBounds?.x,
         y: savedBounds?.y,
         frame: false,
@@ -404,6 +406,40 @@ function closeWindow() {
     }
 }
 
+function resizeWindow(edge, deltaX, deltaY) {
+    if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isMaximized() || mainWindow.isFullScreen()) {
+        return null;
+    }
+
+    const bounds = mainWindow.getBounds();
+    const minSize = mainWindow.getMinimumSize();
+    const minWidth = minSize?.[0] || WINDOW.MIN_WIDTH || 900;
+    const minHeight = minSize?.[1] || WINDOW.MIN_HEIGHT || 600;
+    const next = { ...bounds };
+
+    if (edge.includes('e')) {
+        next.width = Math.max(minWidth, bounds.width + deltaX);
+    }
+    if (edge.includes('s')) {
+        next.height = Math.max(minHeight, bounds.height + deltaY);
+    }
+    if (edge.includes('w')) {
+        const requestedWidth = bounds.width - deltaX;
+        const clampedWidth = Math.max(minWidth, requestedWidth);
+        next.x = bounds.x + (bounds.width - clampedWidth);
+        next.width = clampedWidth;
+    }
+    if (edge.includes('n')) {
+        const requestedHeight = bounds.height - deltaY;
+        const clampedHeight = Math.max(minHeight, requestedHeight);
+        next.y = bounds.y + (bounds.height - clampedHeight);
+        next.height = clampedHeight;
+    }
+
+    mainWindow.setBounds(next);
+    return next;
+}
+
 function isWindowAvailable() {
     return mainWindow !== null && !mainWindow.isDestroyed();
 }
@@ -423,6 +459,7 @@ module.exports = {
     minimizeWindow,
     toggleMaximize,
     closeWindow,
+    resizeWindow,
     isWindowAvailable,
     sendToRenderer,
 };

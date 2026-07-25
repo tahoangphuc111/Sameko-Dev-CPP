@@ -267,6 +267,17 @@ body.customizer-open::before {
 .liquidglass,
 .header-bar,
 .status-bar,
+.panel-head,
+.terminal-section,
+.problems-panel,
+.editor-section,
+.dropdown,
+.update-popup,
+.cc-popup,
+.color-picker-popup,
+.fullscreen-popup,
+.local-history-modal,
+.snippet-editor-popup,
 .io-section.three-card-io .card-panel,
 .welcome-box,
 .note-dialog,
@@ -298,6 +309,141 @@ body.customizer-open::before {
     -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(10px) !important;
     backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(10px) !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(255, 255, 255, 0.16), 0 6px 18px rgba(6, 12, 24, 0.14) !important;
+}
+
+.liquidglass::before,
+.header-bar::before,
+.status-bar::before,
+.explorer-sidebar::before,
+.terminal-section::before,
+.editor-section::before,
+.problems-panel::before,
+.io-section.three-card-io .card-panel::before,
+.welcome-box::before,
+.settings-popup::before,
+.note-dialog::before,
+.dropdown::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.44), transparent 28%, transparent 68%, rgba(255, 255, 255, 0.14)),
+        radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.36), transparent 30%),
+        radial-gradient(circle at 92% 96%, rgba(255, 255, 255, 0.16), transparent 34%);
+    mix-blend-mode: screen;
+    opacity: var(--glass-highlight-opacity, 0.72);
+}
+
+.liquidglass,
+.header-bar,
+.status-bar,
+.panel-head,
+.terminal-section,
+.problems-panel,
+.editor-section,
+.io-section.three-card-io .card-panel,
+.welcome-box,
+.note-dialog,
+.settings-popup,
+.tc6-container,
+.explorer-sidebar,
+.explorer-header,
+.context-menu,
+.dialog-overlay .dialog,
+.update-popup,
+.cc-popup,
+.color-picker-popup,
+.fullscreen-popup,
+.local-history-modal,
+.snippet-editor-popup {
+    position: relative;
+}
+
+body.window-resizing {
+    user-select: none;
+    cursor: default;
+}
+
+.window-resize-handles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10000;
+    -webkit-app-region: no-drag;
+}
+
+.window-resize-handle {
+    position: fixed;
+    pointer-events: auto;
+    -webkit-app-region: no-drag;
+}
+
+.window-resize-n,
+.window-resize-s {
+    left: 10px;
+    right: 10px;
+    height: 6px;
+}
+
+.window-resize-e,
+.window-resize-w {
+    top: 10px;
+    bottom: 10px;
+    width: 6px;
+}
+
+.window-resize-n {
+    top: 0;
+    cursor: ns-resize;
+}
+
+.window-resize-e {
+    right: 0;
+    cursor: ew-resize;
+}
+
+.window-resize-s {
+    bottom: 0;
+    cursor: ns-resize;
+}
+
+.window-resize-w {
+    left: 0;
+    cursor: ew-resize;
+}
+
+.window-resize-ne,
+.window-resize-nw,
+.window-resize-se,
+.window-resize-sw {
+    width: 14px;
+    height: 14px;
+}
+
+.window-resize-ne {
+    top: 0;
+    right: 0;
+    cursor: nesw-resize;
+}
+
+.window-resize-nw {
+    top: 0;
+    left: 0;
+    cursor: nwse-resize;
+}
+
+.window-resize-se {
+    right: 0;
+    bottom: 0;
+    cursor: nwse-resize;
+}
+
+.window-resize-sw {
+    left: 0;
+    bottom: 0;
+    cursor: nesw-resize;
 }
 
 .header-bar {
@@ -7872,6 +8018,70 @@ body.split-active .editor-pane {
     width: clamp(170px, 18vw, 320px);
     min-width: 130px;
     max-width: 34vw;
+}
+
+.io-section.three-card-io {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 6px;
+    width: clamp(520px, 42vw, 760px) !important;
+    min-width: 430px !important;
+    max-width: 52vw !important;
+    height: 100%;
+    min-height: 0;
+    padding: 4px;
+    overflow: hidden;
+}
+
+.io-section.three-card-io .io-panel,
+.io-section.three-card-io .card-panel {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    border-radius: 12px;
+}
+
+.io-section.three-card-io .panel-head {
+    min-height: 26px;
+    padding: 4px 6px;
+    gap: 4px;
+}
+
+.io-section.three-card-io .panel-title {
+    min-width: 0;
+    font-size: 9px;
+    letter-spacing: 0.02em;
+}
+
+.io-section.three-card-io .panel-title i {
+    margin-right: 3px;
+}
+
+.io-section.three-card-io .test-nav,
+.io-section.three-card-io .io-panel-actions {
+    flex-shrink: 0;
+    gap: 2px !important;
+}
+
+.io-section.three-card-io .test-nav-btn {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    font-size: 9px;
+}
+
+.io-section.three-card-io .test-nav-label {
+    font-size: 9px;
+}
+
+.io-section.three-card-io .panel-textarea,
+.io-section.three-card-io .diff-display {
+    min-height: 0;
+    padding: 7px 8px;
+    font-size: 11.5px;
+    line-height: 1.45;
 }
 
 .terminal-section {

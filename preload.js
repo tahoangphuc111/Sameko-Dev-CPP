@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
     maximizeWindow: () => ipcRenderer.invoke('window-maximize'),
     closeWindow: () => ipcRenderer.invoke('window-close'),
+    resizeWindow: (payload) => ipcRenderer.invoke('window-resize', payload),
 
     // Event listeners
     onFileOpened: (callback) => ipcRenderer.on('file-opened', (event, data) => callback(data)),
@@ -210,5 +211,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // System info
     getSystemVersions: () => process.versions
 });
-
 

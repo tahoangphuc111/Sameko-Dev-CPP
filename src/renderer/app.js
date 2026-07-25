@@ -241,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => ensureMonaco(), 800);
     }
     initHeader();
+    initWindowFrameInteractions();
     initMenus();
     initPanels();
     initResizers();
@@ -3721,6 +3722,75 @@ function initHeader() {
     }
 
     setupSplitResizer();
+}
+
+function initWindowFrameInteractions() {
+    const header = document.querySelector('.header-bar');
+    if (header) {
+        header.addEventListener('dblclick', (e) => {
+            if (e.target.closest('button, .tab, .tab-add, .menu-group, .header-actions, .win-btns, input, textarea, select')) {
+                return;
+            }
+            window.electronAPI?.maximizeWindow?.();
+        });
+    }
+
+    const handles = document.querySelectorAll('[data-window-resize-edge]');
+    handles.forEach(handle => {
+        let resizing = false;
+        let edge = '';
+        let lastX = 0;
+        let lastY = 0;
+        let pendingDelta = null;
+        let frameId = 0;
+
+        const flushResize = () => {
+            frameId = 0;
+            if (!pendingDelta || !window.electronAPI?.resizeWindow) return;
+            window.electronAPI.resizeWindow(pendingDelta);
+            pendingDelta = null;
+        };
+
+        const onPointerMove = (e) => {
+            if (!resizing) return;
+            const deltaX = e.screenX - lastX;
+            const deltaY = e.screenY - lastY;
+            lastX = e.screenX;
+            lastY = e.screenY;
+            pendingDelta = { edge, deltaX, deltaY };
+            if (!frameId) {
+                frameId = requestAnimationFrame(flushResize);
+            }
+        };
+
+        const stopResize = () => {
+            if (!resizing) return;
+            resizing = false;
+            document.body.classList.remove('window-resizing');
+            if (frameId) {
+                cancelAnimationFrame(frameId);
+                flushResize();
+            }
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', stopResize);
+            document.removeEventListener('pointercancel', stopResize);
+        };
+
+        handle.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            resizing = true;
+            edge = handle.dataset.windowResizeEdge;
+            lastX = e.screenX;
+            lastY = e.screenY;
+            document.body.classList.add('window-resizing');
+            handle.setPointerCapture?.(e.pointerId);
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', stopResize);
+            document.addEventListener('pointercancel', stopResize);
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
 }
 
 function toggleIO() {
