@@ -8927,3 +8927,79 @@ html[data-theme*="dark"] {
     background: rgba(255, 255, 255, 0.18) !important;
     opacity: var(--glass-highlight-opacity, 0.42) !important;
 }
+
+/* ===== IO SINGLE COLUMN STACK ===== */
+.main:has(.io-section.three-card-io:not(.panel-hidden)) {
+    display: flex !important;
+    flex-direction: row !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-template-areas: none !important;
+    align-items: stretch !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .editor-section {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) #resizer-io {
+    display: block !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) #resizer-term {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .terminal-section {
+    flex: 0 1 clamp(210px, 24vw, 420px) !important;
+    width: clamp(210px, 24vw, 420px) !important;
+    max-width: 42vw !important;
+    min-width: 150px !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-rows: unset !important;
+    gap: 8px !important;
+    width: clamp(220px, 20vw, 320px) !important;
+    min-width: 190px !important;
+    max-width: 360px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .card-panel {
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-head {
+    min-height: 26px !important;
+    padding: 5px 8px !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-textarea,
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .diff-display {
+    min-height: 0 !important;
+    padding: 8px 9px !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)):has(.terminal-section.panel-hidden) .terminal-section,
+.main:has(.io-section.three-card-io:not(.panel-hidden)):has(.terminal-section.panel-hidden) #resizer-term {
+    display: none !important;
+}
+
+@media (max-width: 840px) {
+    .main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io {
+        width: clamp(190px, 32vw, 280px) !important;
+        min-width: 170px !important;
+    }
+}
