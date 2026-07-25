@@ -683,13 +683,13 @@ body.is-mac .header-bar,
 }
 
 .update-btn-bottom {
-    background: rgba(3, 169, 244, 0.15);
-    color: var(--text-primary, #2a5a75);
-    border: 1px solid rgba(3, 169, 244, 0.3);
-    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.18), rgba(25, 118, 210, 0.25));
+    color: var(--accent, #388e3c);
+    border: 1.5px solid rgba(100, 181, 246, 0.45);
+    border-radius: 14px;
     padding: 2px 10px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -697,13 +697,15 @@ body.is-mac .header-bar,
     transition: all 0.2s ease;
     outline: none;
     font-family: inherit;
+    box-shadow: 0 2px 6px rgba(33, 150, 243, 0.15);
 }
 
 .update-btn-bottom:hover {
-    background: rgba(3, 169, 244, 0.3);
-    border-color: rgba(3, 169, 244, 0.6);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.35), rgba(25, 118, 210, 0.4));
+    border-color: rgba(100, 181, 246, 0.85);
+    color: #1565c0;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(3, 169, 244, 0.25);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
 }
 
 .win-btns {
