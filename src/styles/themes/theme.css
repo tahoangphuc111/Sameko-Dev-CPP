@@ -261,11 +261,29 @@ body.customizer-open::before {
 .welcome-box,
 .note-dialog,
 .settings-popup,
-.tc6-container {
+.tc6-container,
+.explorer-sidebar,
+.explorer-header,
+.context-menu,
+.dialog-overlay .dialog {
     background: hsl(0 0% 100% / var(--glass-frost, 0.12)) !important;
     -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(20px) !important;
     backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(20px) !important;
     box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.55), inset 0 0 10px 4px rgba(255, 255, 255, 0.25), inset 0 4px 16px rgba(17, 17, 26, 0.05), inset 0 8px 24px rgba(17, 17, 26, 0.05), inset 0 6px 56px rgba(17, 17, 26, 0.05), 0 10px 30px rgba(0, 20, 40, 0.08) !important;
+}
+
+.liquidglass-light,
+.toggle-btn,
+.menu-group,
+.logo,
+.action-btn,
+.tab.active,
+.update-btn-bottom,
+.explorer-action-btn:hover {
+    background: hsl(0 0% 100% / calc(var(--glass-frost, 0.12) + 0.08)) !important;
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(12px) !important;
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(12px) !important;
+    box-shadow: inset 0 0 1px 0.5px rgba(255, 255, 255, 0.65), inset 0 0 6px 2px rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 20, 40, 0.06) !important;
 }
 
 .header-bar {
@@ -5968,11 +5986,18 @@ body.split-active .editor-pane {
     border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* PIN & RECENT SECTIONS (Placeholder - to be implemented) */
+/* PIN, RECENT & FILES SECTIONS */
 .explorer-pinned-section,
-.explorer-recent-section {
+.explorer-recent-section,
+.explorer-files-section {
     padding: 8px 0;
     border-bottom: 1px solid var(--border, #e0f0ff);
+}
+
+.explorer-files-section .explorer-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .explorer-section-title {

@@ -1189,9 +1189,25 @@ const FileExplorer = {
             `;
         } else {
             // ==================== NORMAL MODE ====================
+            const fileListHtml = this.tree && this.tree.length > 0
+                ? this.renderItems(this.tree, 0).join('')
+                : '';
+            const folderName = this.currentFolder
+                ? this.currentFolder.split(/[/\\]/).pop()
+                : 'FILES';
+            const filesSectionHtml = fileListHtml
+                ? `<div class="explorer-files-section">
+                       <div class="explorer-section-title">
+                           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                           ${folderName.toUpperCase()}
+                       </div>
+                       <div class="explorer-section-items">${fileListHtml}</div>
+                   </div>`
+                : '';
             this.elements.tree.innerHTML = `
                 ${contestSectionHtml}
                 ${categoriesHtml}
+                ${filesSectionHtml}
                 ${recentHtml}
             `;
         }
