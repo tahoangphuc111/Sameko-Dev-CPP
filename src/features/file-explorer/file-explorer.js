@@ -2295,7 +2295,7 @@ const FileExplorer = {
             <div class="note-dialog input-dialog">
                 <div class="note-dialog-header">
                     <h3>${title}</h3>
-                    <button class="note-dialog-close" title="Close">${this.ICONS.close}</button>
+                    <button class="note-dialog-close" title="Close"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="note-dialog-body">
                     <input 
@@ -2304,10 +2304,11 @@ const FileExplorer = {
                         value="${defaultValue || ''}"
                         placeholder="Enter value..."
                     />
+                    <div class="input-dialog-error" style="display:none;color:var(--error,#ef5350);font-size:11px;margin-top:6px;font-weight:600;">⚠️ Please enter a valid value</div>
                 </div>
                 <div class="note-dialog-footer">
-                    <button class="note-dialog-btn note-dialog-cancel">Cancel</button>
-                    <button class="note-dialog-btn note-dialog-save input-dialog-save">OK</button>
+                    <button class="note-dialog-btn note-dialog-cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
+                    <button class="note-dialog-btn note-dialog-save input-dialog-save"><i class="fa-solid fa-check"></i> OK</button>
                 </div>
             </div>
         `;
@@ -2318,6 +2319,7 @@ const FileExplorer = {
         const saveBtn = overlay.querySelector('.note-dialog-save') || overlay.querySelector('.input-dialog-save');
         const cancelBtn = overlay.querySelector('.note-dialog-cancel');
         const closeBtn = overlay.querySelector('.note-dialog-close');
+        const errorMsg = overlay.querySelector('.input-dialog-error');
 
         // Blur Monaco editor to prevent it from stealing focus
         if (window.App && window.App.editor) {
@@ -2330,17 +2332,28 @@ const FileExplorer = {
                 input.focus();
                 input.select();
             }
-        }, 80);
+        }, 50);
 
+        let closing = false;
         const closeDialog = () => {
-            overlay.remove();
+            if (closing) return;
+            closing = true;
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.15s ease';
+            setTimeout(() => overlay.remove(), 150);
         };
 
         const submit = () => {
             const value = input ? input.value.trim() : '';
-            if (value) {
-                callback(value);
+            if (!value) {
+                if (input) {
+                    input.style.borderColor = 'var(--error, #ef5350)';
+                    input.focus();
+                }
+                if (errorMsg) errorMsg.style.display = 'block';
+                return;
             }
+            callback(value);
             closeDialog();
         };
 
@@ -2350,14 +2363,21 @@ const FileExplorer = {
         overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
 
         if (input) {
-            input.onkeydown = (e) => {
-                if (e.key === 'Escape') {
-                    closeDialog();
-                } else if (e.key === 'Enter') {
-                    submit();
-                }
+            input.oninput = () => {
+                input.style.borderColor = '';
+                if (errorMsg) errorMsg.style.display = 'none';
             };
         }
+
+        overlay.onkeydown = (e) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                closeDialog();
+            } else if (e.key === 'Enter') {
+                e.stopPropagation();
+                submit();
+            }
+        };
     },
 
     /**
