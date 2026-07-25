@@ -261,7 +261,7 @@ function createMainWindow() {
         y: savedBounds?.y,
         frame: false,
         titleBarStyle: isMac ? 'hiddenInset' : undefined,
-        trafficLightPosition: isMac ? { x: 12, y: 12 } : undefined,
+        trafficLightPosition: isMac ? { x: 16, y: 17 } : undefined,
         show: false,
         webPreferences: {
             nodeIntegration: false,

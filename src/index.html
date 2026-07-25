@@ -1269,48 +1269,51 @@
 
                 <div class="resizer" id="resizer-io"></div>
 
-                <div class="io-section" id="io-section">
-                    <div class="io-panel io-panel-input">
+                <div class="io-section three-card-io" id="io-section">
+                    <!-- CARD 1: INPUT -->
+                    <div class="io-panel io-panel-input card-panel">
                         <div class="panel-head">
-                            <span class="panel-title input">INPUT</span>
-                            <!-- Test case navigation (hidden by default, shown when problem loaded) -->
+                            <span class="panel-title input"><i class="fa-solid fa-right-to-bracket"></i> INPUT</span>
+                            <!-- Test case navigation -->
                             <div class="test-nav" id="test-nav" style="display:none">
                                 <button class="test-nav-btn" id="btn-add-test" title="Add new test case">
-                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
-                                        stroke-width="3">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                                    </svg>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                                 <button class="test-nav-btn" id="btn-prev-test" title="Previous test">
-                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
-                                        stroke-width="3">
-                                        <polyline points="15 18 9 12 15 6" />
-                                    </svg>
+                                    <i class="fa-solid fa-chevron-left"></i>
                                 </button>
                                 <span class="test-nav-label" id="test-nav-label">1/1</span>
                                 <button class="test-nav-btn" id="btn-next-test" title="Next test">
-                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
-                                        stroke-width="3">
-                                        <polyline points="9 18 15 12 9 6" />
-                                    </svg>
+                                    <i class="fa-solid fa-chevron-right"></i>
                                 </button>
-                                <button class="test-nav-btn danger" id="btn-delete-test" title="Delete this test case">
-                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
-                                        stroke-width="3">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path
-                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                        </path>
-                                    </svg>
+                                <button class="test-nav-btn danger" id="btn-delete-test" title="Delete test case">
+                                    <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
                         </div>
-                        <textarea class="panel-textarea" id="input-area" placeholder="Enter test data..."></textarea>
+                        <textarea class="panel-textarea" id="input-area" placeholder="Enter program input data..."></textarea>
                     </div>
-                    <div class="io-panel io-panel-expected">
+
+                    <!-- CARD 2: ACTUAL OUTPUT -->
+                    <div class="io-panel io-panel-output card-panel">
                         <div class="panel-head">
-                            <span class="panel-title output">EXPECTED OUTPUT</span>
+                            <span class="panel-title output"><i class="fa-solid fa-terminal"></i> ACTUAL OUTPUT</span>
+                            <div class="io-panel-actions" style="display:flex;gap:4px;align-items:center;">
+                                <button class="test-nav-btn" id="btn-copy-actual-output" title="Copy output">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                                <button class="test-nav-btn" id="btn-clear-actual-output" title="Clear output">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <textarea class="panel-textarea" id="actual-output-area" readonly placeholder="Actual program output will appear here..."></textarea>
+                    </div>
+
+                    <!-- CARD 3: EXPECTED OUTPUT -->
+                    <div class="io-panel io-panel-expected card-panel">
+                        <div class="panel-head">
+                            <span class="panel-title expected" style="color:var(--accent,#4fc3f7);"><i class="fa-solid fa-bullseye"></i> EXPECTED OUTPUT</span>
                             <div class="io-panel-actions" style="display:flex;gap:4px;align-items:center;">
                                 <button class="test-nav-btn" id="btn-paste-expected" title="Paste expected output from clipboard">
                                     <i class="fa-solid fa-paste"></i>
@@ -1321,7 +1324,7 @@
                             </div>
                         </div>
                         <textarea class="panel-textarea" id="expected-area"
-                            placeholder="Paste expected output here to auto-compare with program output..."></textarea>
+                            placeholder="Paste expected output here to auto-compare..."></textarea>
                         <div class="diff-display" id="expected-diff" style="display:none"></div>
                     </div>
                 </div>

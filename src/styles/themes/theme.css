@@ -679,7 +679,7 @@ body.is-mac .win-btns,
 
 body.is-mac .header-bar,
 .header-bar.is-mac {
-    padding-left: 78px;
+    padding-left: 92px;
 }
 
 .win-btns {
@@ -832,6 +832,60 @@ body.is-mac .header-bar,
     display: flex;
     flex-direction: column;
     overflow: visible;
+}
+
+/* ===== THREE CARD IO LAYOUT (INPUT, ACTUAL OUTPUT, EXPECTED OUTPUT) ===== */
+.io-section.three-card-io {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    padding: 6px;
+    background: var(--bg-main, #f0f7fc);
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.io-section.three-card-io .card-panel {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-panel, #ffffff);
+    border: 1.5px solid var(--border, #e0f0ff);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.io-section.three-card-io .card-panel:focus-within,
+.io-section.three-card-io .card-panel:hover {
+    border-color: var(--accent, #4fc3f7);
+    box-shadow: 0 6px 16px rgba(79, 195, 247, 0.12);
+}
+
+.io-section.three-card-io .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: var(--bg-panel-header, rgba(224, 240, 255, 0.3));
+    border-bottom: 1px solid var(--border, #e0f0ff);
+}
+
+.io-section.three-card-io .panel-textarea {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    border: none;
+    outline: none;
+    padding: 8px 10px;
+    background: transparent;
+    color: var(--text-primary, #2a5a75);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    box-sizing: border-box;
 }
 
 .terminal-body {

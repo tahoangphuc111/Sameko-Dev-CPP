@@ -5791,6 +5791,12 @@ function compareOutput() {
     // If process hasn't emitted exit yet, use currently capturing block.
     const actualText = (capturing ? currentRunLines : latestRunLines).join('\n');
 
+    // Update Card 2: Actual Output Card
+    const actualOutputArea = document.getElementById('actual-output-area');
+    if (actualOutputArea) {
+        actualOutputArea.value = actualText;
+    }
+
     const diffDisplay = document.getElementById('expected-diff');
     const textarea = document.getElementById('expected-area');
 
@@ -5824,8 +5830,27 @@ function compareOutput() {
     }
 }
 
-// Bind Paste & Clear Expected Output buttons
+// Bind Paste, Copy & Clear Output buttons
 document.addEventListener('DOMContentLoaded', () => {
+    const copyActualBtn = document.getElementById('btn-copy-actual-output');
+    if (copyActualBtn) {
+        copyActualBtn.onclick = () => {
+            const actualArea = document.getElementById('actual-output-area');
+            if (actualArea && actualArea.value) {
+                navigator.clipboard.writeText(actualArea.value);
+                if (typeof showToast === 'function') showToast('Actual output copied to clipboard', 'info');
+            }
+        };
+    }
+
+    const clearActualBtn = document.getElementById('btn-clear-actual-output');
+    if (clearActualBtn) {
+        clearActualBtn.onclick = () => {
+            const actualArea = document.getElementById('actual-output-area');
+            if (actualArea) actualArea.value = '';
+        };
+    }
+
     const pasteExpectedBtn = document.getElementById('btn-paste-expected');
     if (pasteExpectedBtn) {
         pasteExpectedBtn.onclick = async () => {
