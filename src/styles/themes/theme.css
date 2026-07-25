@@ -8797,3 +8797,133 @@ body.performance-mode .dialog-overlay .dialog {
 .gutter:hover {
     background-color: var(--accent, #88c9ea);
 }
+
+/* ===== LIQUID GLASS CONTRAST CORRECTION ===== */
+html[data-theme="kawaii-light"],
+html[data-theme="sakura"],
+html:not([data-theme]) {
+    --glass-control-text: #203547;
+    --glass-control-muted: #5f7282;
+    --glass-control-surface: rgba(255, 255, 255, 0.34);
+    --glass-control-surface-hover: rgba(255, 255, 255, 0.48);
+    --glass-control-border: rgba(32, 53, 71, 0.18);
+    --glass-control-border-strong: rgba(32, 53, 71, 0.28);
+    --glass-specular: rgba(255, 255, 255, 0.78);
+    --glass-text: #203547;
+    --glass-text-muted: #5f7282;
+}
+
+html[data-theme="kawaii-dark"],
+html[data-theme="dracula"],
+html[data-theme="monokai"],
+html[data-theme="nord"],
+html[data-theme="one-dark"],
+html[data-theme*="dark"] {
+    --glass-control-text: rgba(246, 248, 255, 0.94);
+    --glass-control-muted: rgba(210, 220, 235, 0.72);
+    --glass-control-surface: rgba(255, 255, 255, 0.11);
+    --glass-control-surface-hover: rgba(255, 255, 255, 0.17);
+    --glass-control-border: rgba(255, 255, 255, 0.14);
+    --glass-control-border-strong: rgba(255, 255, 255, 0.24);
+    --glass-specular: rgba(255, 255, 255, 0.42);
+}
+
+.header-bar,
+.menu-group,
+.logo,
+.toggle-btn,
+.action-btn,
+.tab,
+.tab.active,
+.tab-add,
+.menu-btn,
+.hamburger-btn,
+.explorer-action-btn,
+.update-btn-bottom,
+.liquid-glass-settings .setting-row,
+.liquid-glass-settings select,
+.liquid-glass-settings .slider,
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .card-panel,
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-head {
+    background: var(--glass-control-surface) !important;
+    background-image: none !important;
+    border-color: var(--glass-control-border) !important;
+    color: var(--glass-control-text) !important;
+    text-shadow: none !important;
+    box-shadow:
+        inset 0 1px 0 var(--glass-specular),
+        inset 0 -1px 0 rgba(32, 53, 71, 0.08),
+        0 8px 24px rgba(15, 23, 42, 0.13) !important;
+}
+
+.header-bar svg,
+.header-bar i,
+.menu-group svg,
+.menu-group i,
+.toggle-btn svg,
+.toggle-btn i,
+.action-btn svg,
+.action-btn i,
+.tab svg,
+.tab i,
+.tab-add svg,
+.tab-add i,
+.menu-btn svg,
+.menu-btn i,
+.explorer-action-btn svg,
+.explorer-action-btn i,
+.update-btn-bottom svg,
+.update-btn-bottom i {
+    color: currentColor !important;
+    stroke: currentColor !important;
+    -webkit-text-fill-color: currentColor !important;
+}
+
+.menu-btn:hover,
+.toggle-btn:hover,
+.action-btn:hover,
+.tab:hover,
+.tab-add:hover,
+.explorer-action-btn:hover,
+.liquid-glass-settings .setting-row:hover {
+    background: var(--glass-control-surface-hover) !important;
+    border-color: var(--glass-control-border-strong) !important;
+    color: var(--glass-control-text) !important;
+}
+
+.menu-btn.active,
+.toggle-btn.active,
+.action-btn.primary,
+.action-btn.run-all,
+.action-btn.update-ready,
+.liquid-glass-settings .switch input:checked+.slider {
+    background: color-mix(in srgb, var(--glass-control-surface-hover) 86%, var(--accent, #88c9ea)) !important;
+    border-color: color-mix(in srgb, var(--glass-control-border-strong) 78%, var(--accent, #88c9ea)) !important;
+    color: var(--glass-control-text) !important;
+}
+
+.action-btn:disabled,
+.action-btn.primary:disabled,
+.toggle-btn:disabled {
+    background: color-mix(in srgb, var(--glass-control-surface) 74%, transparent) !important;
+    border-color: color-mix(in srgb, var(--glass-control-border) 70%, transparent) !important;
+    color: color-mix(in srgb, var(--glass-control-text) 48%, transparent) !important;
+    opacity: 1 !important;
+}
+
+.liquidglass::before,
+.header-bar::before,
+.status-bar::before,
+.explorer-sidebar::before,
+.terminal-section::before,
+.editor-section::before,
+.problems-panel::before,
+.io-section.three-card-io .card-panel::before,
+.welcome-box::before,
+.settings-popup::before,
+.note-dialog::before,
+.dropdown::before,
+.liquid-glass-settings .setting-row::before {
+    background: rgba(255, 255, 255, 0.18) !important;
+    opacity: var(--glass-highlight-opacity, 0.42) !important;
+}
