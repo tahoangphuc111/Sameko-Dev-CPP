@@ -5807,12 +5807,53 @@ function compareOutput() {
     const diff = buildCompactDiffHtml(expectedRaw, actualText, { normalize: true });
 
     if (diffDisplay && textarea) {
-        diffDisplay.innerHTML = `<div class="diff-hint">Click diff to edit expected output</div>${diff.html}`;
+        const statusBadge = diff.allMatch
+            ? `<span style="background:rgba(76,175,80,0.2);color:#66bb6a;padding:2px 8px;border-radius:4px;font-weight:bold;margin-left:8px;font-size:12px;">✅ ACCEPTED (Output Matched)</span>`
+            : `<span style="background:rgba(244,67,54,0.2);color:#ef5350;padding:2px 8px;border-radius:4px;font-weight:bold;margin-left:8px;font-size:12px;">❌ WRONG ANSWER (${diff.mismatchCount} line diffs)</span>`;
+
+        diffDisplay.innerHTML = `<div class="diff-hint">Expected vs Actual Output ${statusBadge} <span style="opacity:0.6;font-size:11px;">(Click diff to edit)</span></div>${diff.html}`;
         diffDisplay.style.display = 'block';
         diffDisplay.title = 'Click to edit expected output';
         textarea.style.display = 'none';
     }
+
+    // Auto open IO panel if expected output exists so user sees diff immediately
+    if (hasExpected && !App.showIO) {
+        App.showIO = true;
+        updateUI();
+    }
 }
+
+// Bind Paste & Clear Expected Output buttons
+document.addEventListener('DOMContentLoaded', () => {
+    const pasteExpectedBtn = document.getElementById('btn-paste-expected');
+    if (pasteExpectedBtn) {
+        pasteExpectedBtn.onclick = async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    const expectedArea = document.getElementById('expected-area');
+                    if (expectedArea) {
+                        expectedArea.value = text;
+                        switchToExpectedEdit();
+                        compareOutput();
+                    }
+                }
+            } catch (e) { console.warn('Failed to paste expected output', e); }
+        };
+    }
+
+    const clearExpectedBtn = document.getElementById('btn-clear-expected');
+    if (clearExpectedBtn) {
+        clearExpectedBtn.onclick = () => {
+            const expectedArea = document.getElementById('expected-area');
+            if (expectedArea) {
+                expectedArea.value = '';
+                switchToExpectedEdit();
+            }
+        };
+    }
+});
 
 function escapeHtml(text) {
     const div = document.createElement('div');

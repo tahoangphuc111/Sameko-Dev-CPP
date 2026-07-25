@@ -1310,10 +1310,18 @@
                     </div>
                     <div class="io-panel io-panel-expected">
                         <div class="panel-head">
-                            <span class="panel-title output">EXPECTED</span>
+                            <span class="panel-title output">EXPECTED OUTPUT</span>
+                            <div class="io-panel-actions" style="display:flex;gap:4px;align-items:center;">
+                                <button class="test-nav-btn" id="btn-paste-expected" title="Paste expected output from clipboard">
+                                    <i class="fa-solid fa-paste"></i>
+                                </button>
+                                <button class="test-nav-btn" id="btn-clear-expected" title="Clear expected output">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
                         </div>
                         <textarea class="panel-textarea" id="expected-area"
-                            placeholder="Expected output..."></textarea>
+                            placeholder="Paste expected output here to auto-compare with program output..."></textarea>
                         <div class="diff-display" id="expected-diff" style="display:none"></div>
                     </div>
                 </div>
