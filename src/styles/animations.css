@@ -109,6 +109,62 @@
     }
 }
 
+button:active,
+.btn:active,
+.action-btn:active,
+.welcome-btn:active {
+    transform: scale(0.96);
+    transition: transform 0.08s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes tabPop {
+    0% {
+        transform: translateY(2px) scale(0.98);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.tab.active {
+    animation: tabPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalLiquidIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.92) translateY(14px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.note-dialog,
+.settings-popup,
+.tc6-container {
+    animation: modalLiquidIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes liquidPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.06);
+        opacity: 0.88;
+    }
+}
+
+.update-badge-corner,
+.live-check-state.checking {
+    animation: liquidPulse 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* ============================================================================
  * REDUCED MOTION SUPPORT
  * ============================================================================ */
