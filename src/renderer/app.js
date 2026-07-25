@@ -1331,9 +1331,13 @@ function saveSettings() {
 
 function initSettings() {
     document.getElementById('btn-settings').onclick = openSettings;
-    document.getElementById('settings-close').onclick = closeSettings;
+    document.getElementById('settings-close').onclick = cancelSettings;
+    const cancelSettingsBtn = document.getElementById('btn-cancel-settings');
+    if (cancelSettingsBtn) {
+        cancelSettingsBtn.onclick = cancelSettings;
+    }
     document.getElementById('settings-overlay').onclick = e => {
-        if (e.target.id === 'settings-overlay') closeSettings();
+        if (e.target.id === 'settings-overlay') cancelSettings();
     };
 
     // Header restart/update button
@@ -2203,6 +2207,13 @@ function openSettings() {
 
 function closeSettings() {
     document.getElementById('settings-overlay').classList.remove('show');
+}
+
+function cancelSettings() {
+    if (typeof ThemeManager !== 'undefined' && App.settings?.appearance?.theme) {
+        ThemeManager.setTheme(App.settings.appearance.theme);
+    }
+    closeSettings();
 }
 
 function saveSettingsAndClose() {
@@ -3515,9 +3526,22 @@ function initShortcuts() {
             return;
         }
 
-        // Handling for Escape (hardcoded for settings close)
+        // Handling for Escape key to close active modals safely
         if (e.key === 'Escape') {
-            closeSettings();
+            const snippetModal = document.getElementById('snippet-editor-modal');
+            const historyModal = document.getElementById('local-history-modal');
+            const settingsOverlay = document.getElementById('settings-overlay');
+            const tcOverlay = document.getElementById('theme-customizer-v6');
+
+            if (snippetModal && snippetModal.classList.contains('active')) {
+                if (typeof closeSnippetEditor === 'function') closeSnippetEditor();
+            } else if (historyModal && historyModal.classList.contains('active')) {
+                if (typeof LocalHistory !== 'undefined') LocalHistory.hideHistoryModal();
+            } else if (tcOverlay && tcOverlay.classList.contains('visible')) {
+                if (typeof ThemeCustomizer !== 'undefined') ThemeCustomizer.close();
+            } else if (settingsOverlay && settingsOverlay.classList.contains('show')) {
+                cancelSettings();
+            }
         }
     });
 

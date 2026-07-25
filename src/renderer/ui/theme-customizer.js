@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Theme Customizer v6.2
  * Click-to-edit live preview with background support
  * 
@@ -352,6 +352,7 @@ const ThemeCustomizer = {
                 
                 <div class="tc6-footer">
                     <div class="tc6-footer-left">
+                        <button class="tc6-btn-secondary" id="tc6-cancel">Cancel</button>
                         <button class="tc6-btn-reset" id="tc6-reset">Reset</button>
                         ${isCustomTheme ? `
                         <button class="tc6-btn-delete" id="tc6-delete">Delete Theme</button>
@@ -2321,6 +2322,7 @@ const ThemeCustomizer = {
         if (!this.popup) return;
 
         this.popup.querySelector('#tc6-close')?.addEventListener('click', () => this.close());
+        this.popup.querySelector('#tc6-cancel')?.addEventListener('click', () => this.close());
         this.popup.querySelector('#tc6-reset')?.addEventListener('click', () => this._reset());
         this.popup.querySelector('#tc6-save')?.addEventListener('click', () => this._saveOverwrite());
         this.popup.querySelector('#tc6-save-new')?.addEventListener('click', () => this._saveAsNew());
