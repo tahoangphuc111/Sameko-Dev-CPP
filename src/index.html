@@ -1362,7 +1362,7 @@
                 <span class="status-item" id="status"><span class="dot"></span>Ready</span>
             </div>
             <div class="status-right">
-                <button class="status-item update-btn-bottom" id="status-update-btn" title="Download latest Sameko Dev C++ update">
+                <button class="status-item update-btn-bottom" id="status-update-btn" title="Download latest Sameko Dev C++ update" style="display: none;">
                     <i class="fa-solid fa-download" style="color:#64b5f6;"></i> <span id="status-update-text">Download Update</span>
                 </button>
                 <span class="status-item live-check-state" id="live-check-state">Live off</span>
@@ -1410,14 +1410,15 @@
     <script src="renderer/app.js"></script>
     <svg style="display:none" class="glass-surface__filter">
         <filter id="glass-filter" color-interpolation-filters="sRGB">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="0.2" result="blurred_source" />
-            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" />
-            <feDisplacementMap in="blurred_source" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-            <feColorMatrix in="displaced" type="saturate" values="1.3" result="displaced_saturated" />
-            <feComponentTransfer in="displaced_saturated" result="specular_faded">
-                <feFuncA type="linear" slope="0.95" />
-            </feComponentTransfer>
-            <feBlend in="specular_faded" in2="SourceGraphic" mode="normal" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="0.14" result="glass-soften" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.018 0.032" numOctaves="1" seed="9" result="glass-map" />
+            <feDisplacementMap in="glass-soften" in2="glass-map" scale="2.4" xChannelSelector="R" yChannelSelector="G" result="glass-refract" />
+            <feColorMatrix in="glass-refract" type="saturate" values="1.12" result="glass-color" />
+            <feSpecularLighting in="glass-map" surfaceScale="2" specularConstant="0.42" specularExponent="18" lighting-color="#ffffff" result="glass-specular">
+                <feDistantLight azimuth="-60" elevation="45" />
+            </feSpecularLighting>
+            <feComposite in="glass-specular" in2="glass-color" operator="in" result="glass-rim" />
+            <feBlend in="glass-color" in2="glass-rim" mode="screen" />
         </filter>
     </svg>
 </body>

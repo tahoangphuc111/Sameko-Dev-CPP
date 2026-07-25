@@ -89,6 +89,13 @@
     /* Settings label text */
     --settings-label-color: #e0f0ff;
     --settings-section-color: #88c9ea;
+    --glass-panel-bg: rgba(34, 48, 68, 0.40);
+    --glass-panel-bg-strong: rgba(42, 60, 84, 0.52);
+    --glass-edge: rgba(232, 246, 255, 0.52);
+    --glass-edge-soft: rgba(232, 246, 255, 0.20);
+    --glass-text: #f2f8ff;
+    --glass-text-muted: #c5d8e8;
+    --terminal-text: #e0f0ff;
 }
 
 /* ============================================================================
@@ -167,6 +174,12 @@
     --welcome-btn-primary-border: var(--accent, #ff9aaf);
     --settings-label-color: #8b5f65;
     --settings-section-color: #ff9aaf;
+    --glass-panel-bg: rgba(255, 228, 238, 0.32);
+    --glass-panel-bg-strong: rgba(255, 238, 244, 0.46);
+    --glass-edge: rgba(255, 255, 255, 0.58);
+    --glass-edge-soft: rgba(255, 255, 255, 0.24);
+    --glass-text: #5d323c;
+    --glass-text-muted: #83535d;
 }
 
 /* Custom Toggle for Sakura (True Pastel) */
@@ -251,6 +264,13 @@
     /* Settings label text */
     --settings-label-color: #f8f8f2;
     --settings-section-color: #bd93f9;
+    --glass-panel-bg: rgba(62, 54, 96, 0.42);
+    --glass-panel-bg-strong: rgba(78, 66, 116, 0.56);
+    --glass-edge: rgba(248, 248, 255, 0.50);
+    --glass-edge-soft: rgba(248, 248, 255, 0.20);
+    --glass-text: #fffaff;
+    --glass-text-muted: #ded4ff;
+    --terminal-text: #f8f8f2;
 }
 
 /* ============================================================================
@@ -324,6 +344,13 @@
     /* Settings label text */
     --settings-label-color: #f8f8f2;
     --settings-section-color: #a6e22e;
+    --glass-panel-bg: rgba(54, 56, 46, 0.42);
+    --glass-panel-bg-strong: rgba(66, 68, 54, 0.56);
+    --glass-edge: rgba(255, 255, 242, 0.46);
+    --glass-edge-soft: rgba(255, 255, 242, 0.18);
+    --glass-text: #fffdf4;
+    --glass-text-muted: #eee9b0;
+    --terminal-text: #f8f8f2;
 }
 
 /* ============================================================================
@@ -397,6 +424,13 @@
     /* Settings label text */
     --settings-label-color: #eceff4;
     --settings-section-color: #88c0d0;
+    --glass-panel-bg: rgba(58, 68, 86, 0.42);
+    --glass-panel-bg-strong: rgba(70, 82, 104, 0.56);
+    --glass-edge: rgba(236, 242, 249, 0.50);
+    --glass-edge-soft: rgba(236, 242, 249, 0.20);
+    --glass-text: #f6f9ff;
+    --glass-text-muted: #dbe7f4;
+    --terminal-text: #eceff4;
 }
 
 /* ============================================================================
@@ -428,7 +462,7 @@
 [data-theme="dracula"] .menu-btn,
 [data-theme="monokai"] .menu-btn,
 [data-theme="nord"] .menu-btn {
-    color: var(--text-secondary);
+    color: var(--glass-text-muted, var(--text-secondary));
 }
 
 [data-theme="kawaii-dark"] .menu-btn:hover,
@@ -436,7 +470,7 @@
 [data-theme="monokai"] .menu-btn:hover,
 [data-theme="nord"] .menu-btn:hover {
     background: var(--bg-button-hover);
-    color: var(--text-primary);
+    color: var(--glass-text, var(--text-primary));
 }
 
 [data-theme="kawaii-dark"] .menu-btn.active,
@@ -454,14 +488,14 @@
 [data-theme="nord"] .tab {
     background: var(--bg-button);
     border: 2px solid var(--border);
-    color: var(--text-secondary);
+    color: var(--glass-text-muted, var(--text-secondary));
 }
 
 [data-theme="kawaii-dark"] .tab:hover,
 [data-theme="dracula"] .tab:hover,
 [data-theme="monokai"] .tab:hover,
 [data-theme="nord"] .tab:hover {
-    color: var(--text-primary);
+    color: var(--glass-text, var(--text-primary));
 }
 
 [data-theme="kawaii-dark"] .tab.active,
@@ -470,7 +504,7 @@
 [data-theme="nord"] .tab.active {
     background: var(--bg-ocean-medium);
     border-color: var(--bg-ocean-deep);
-    color: var(--text-primary);
+    color: var(--glass-text, var(--text-primary));
 }
 
 [data-theme="kawaii-dark"] .tab-add,
@@ -559,7 +593,7 @@
 [data-theme="monokai"] .toggle-btn,
 [data-theme="nord"] .toggle-btn {
     background: var(--bg-button);
-    color: var(--accent);
+    color: var(--glass-text-muted, var(--accent));
 }
 
 [data-theme="kawaii-dark"] .toggle-btn:hover,
@@ -567,7 +601,7 @@
 [data-theme="monokai"] .toggle-btn:hover,
 [data-theme="nord"] .toggle-btn:hover {
     background: var(--bg-button-hover);
-    color: var(--text-primary);
+    color: var(--glass-text, var(--text-primary));
 }
 
 [data-theme="kawaii-dark"] .toggle-btn.active,
@@ -584,7 +618,7 @@
 [data-theme="nord"] .action-btn {
     background: var(--bg-button);
     border-color: var(--border);
-    color: var(--text-primary);
+    color: var(--glass-text, var(--text-primary));
 }
 
 [data-theme="kawaii-dark"] .action-btn:hover,
@@ -608,7 +642,7 @@
 [data-theme="dracula"] .win-btn,
 [data-theme="monokai"] .win-btn,
 [data-theme="nord"] .win-btn {
-    color: var(--text-secondary);
+    color: var(--glass-text-muted, var(--text-secondary));
 }
 
 [data-theme="kawaii-dark"] .win-btn:hover,
@@ -860,9 +894,9 @@
 [data-theme="dracula"] .status-bar,
 [data-theme="monokai"] .status-bar,
 [data-theme="nord"] .status-bar {
-    background: var(--bg-header-statusbar);
-    border-top-color: var(--border);
-    color: var(--text-secondary);
+    background: var(--glass-panel-bg-strong) !important;
+    border-top-color: var(--glass-edge) !important;
+    color: var(--glass-text, var(--text-secondary));
 }
 
 /* Dropdowns */

@@ -1,6 +1,6 @@
 'use strict';
 
-const { ipcMain } = require('electron');
+const { ipcMain, shell } = require('electron');
 const autoUpdateService = require('../services/auto-update-service');
 
 function registerUpdateHandlers() {
@@ -35,6 +35,14 @@ function registerUpdateHandlers() {
 
     ipcMain.handle('get-update-status', (event) => {
         return autoUpdateService.getStatus();
+    });
+
+    ipcMain.handle('open-release-page', async (event, url) => {
+        const targetUrl = typeof url === 'string' && /^https:\/\/github\.com\/tahoangphuc111\/Sameko-Dev-CPP(\/|$)/.test(url)
+            ? url
+            : 'https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases';
+        await shell.openExternal(targetUrl);
+        return { success: true };
     });
 
     // Get app info (portable detection)

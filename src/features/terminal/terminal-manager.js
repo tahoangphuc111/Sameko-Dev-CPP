@@ -57,6 +57,8 @@ function initTerminal(container, opts = {}) {
         disableStdin: true,            // display-only; input handled by textarea
         fontSize: opts.fontSize || 13,
         fontFamily: "'JetBrains Mono', Consolas, monospace",
+        lineHeight: 1.35,
+        letterSpacing: 0,
         theme: Object.assign({
             background: '#1e2933',
             foreground: '#e0f0ff',

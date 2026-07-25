@@ -1190,7 +1190,7 @@ const FileExplorer = {
         } else {
             // ==================== NORMAL MODE ====================
             const fileListHtml = this.tree && this.tree.length > 0
-                ? this.renderItems(this.tree, 0).join('')
+                ? this.renderItems(this.tree, 0)
                 : '';
             const folderName = this.currentFolder
                 ? this.currentFolder.split(/[/\\]/).pop()

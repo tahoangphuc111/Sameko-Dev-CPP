@@ -23,9 +23,16 @@
 }
 
 :root, :host {
-    --glass-frost: 0.12;
-    --glass-saturation: 1.35;
+    --glass-frost: 0.18;
+    --glass-saturation: 1.28;
     --filter-id: url(#glass-filter);
+    --glass-panel-bg: rgba(238, 246, 255, 0.22);
+    --glass-panel-bg-strong: rgba(238, 246, 255, 0.34);
+    --glass-edge: rgba(255, 255, 255, 0.72);
+    --glass-edge-soft: rgba(255, 255, 255, 0.28);
+    --glass-rim-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(255, 255, 255, 0.18), inset 0 0 18px rgba(255, 255, 255, 0.16), 0 10px 34px rgba(6, 12, 24, 0.16);
+    --glass-text: #17324a;
+    --glass-text-muted: #375e7a;
 
     /* Color Palette - Sameko Saba Style (Original) */
     --bg-ocean-light: #eff8fe;
@@ -201,6 +208,9 @@ body {
     /* Try to make upscaled images sharper */
     position: relative;
     z-index: 0;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* App background is now set via inline styles in app.js, not pseudo-element */
@@ -266,10 +276,14 @@ body.customizer-open::before {
 .explorer-header,
 .context-menu,
 .dialog-overlay .dialog {
-    background: hsl(0 0% 100% / var(--glass-frost, 0.12)) !important;
-    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(20px) !important;
-    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(20px) !important;
-    box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.55), inset 0 0 10px 4px rgba(255, 255, 255, 0.25), inset 0 4px 16px rgba(17, 17, 26, 0.05), inset 0 8px 24px rgba(17, 17, 26, 0.05), inset 0 6px 56px rgba(17, 17, 26, 0.05), 0 10px 30px rgba(0, 20, 40, 0.08) !important;
+    background: var(--glass-panel-bg) !important;
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(14px) !important;
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(14px) !important;
+    border-color: var(--glass-edge-soft) !important;
+    box-shadow: var(--glass-rim-shadow) !important;
+    color: var(--glass-text);
+    transform: translateZ(0);
+    contain: paint;
 }
 
 .liquidglass-light,
@@ -280,17 +294,17 @@ body.customizer-open::before {
 .tab.active,
 .update-btn-bottom,
 .explorer-action-btn:hover {
-    background: hsl(0 0% 100% / calc(var(--glass-frost, 0.12) + 0.08)) !important;
-    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(12px) !important;
-    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(12px) !important;
-    box-shadow: inset 0 0 1px 0.5px rgba(255, 255, 255, 0.65), inset 0 0 6px 2px rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 20, 40, 0.06) !important;
+    background: var(--glass-panel-bg-strong) !important;
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(10px) !important;
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(10px) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(255, 255, 255, 0.16), 0 6px 18px rgba(6, 12, 24, 0.14) !important;
 }
 
 .header-bar {
     display: flex;
     align-items: center;
     height: var(--header-height);
-    border-bottom: 1.5px solid rgba(255, 255, 255, 0.65) !important;
+    border-bottom: 1.5px solid var(--glass-edge) !important;
     padding: 0 16px;
     gap: 16px;
     -webkit-app-region: drag;
@@ -358,20 +372,20 @@ body.customizer-open::before {
     background: transparent;
     border: none;
     border-radius: 8px;
-    color: var(--text-secondary);
+    color: var(--glass-text-muted, var(--text-secondary));
     cursor: pointer;
     font-family: 'Nunito', sans-serif;
     font-size: 14px;
     font-weight: 700;
     transform: translateZ(0);
     /* Force GPU acceleration */
-    will-change: transform, background, color;
+    will-change: transform;
     transition: background-color var(--transition-duration) var(--transition-timing), color var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing);
 }
 
 .menu-btn:hover {
     background: var(--bg-ocean-light);
-    color: var(--bg-ocean-dark);
+    color: var(--glass-text, var(--bg-ocean-dark));
     transform: translateY(-1px) translateZ(0);
 }
 
@@ -419,7 +433,7 @@ body.customizer-open::before {
     background: var(--bg-input, #ffffff);
     border: 2px solid var(--border, #c8e6f8);
     border-radius: 20px;
-    color: var(--text-secondary);
+    color: var(--glass-text-muted, var(--text-secondary));
     cursor: pointer;
     font-size: 13px;
     font-weight: 700;
@@ -518,7 +532,7 @@ body.customizer-open::before {
     background: var(--btn-bg, white);
     border: 2px solid transparent;
     border-radius: 12px;
-    color: var(--btn-text, var(--bg-ocean-deep));
+    color: var(--glass-text-muted, var(--btn-text, var(--bg-ocean-deep)));
     cursor: pointer;
     transition: background var(--transition-duration), transform var(--transition-duration);
 }
@@ -586,7 +600,7 @@ body.customizer-open::before {
     background: var(--btn-bg, white);
     border: 2px solid var(--border, var(--bg-ocean-medium));
     border-radius: 20px;
-    color: var(--btn-text, var(--bg-ocean-dark));
+    color: var(--glass-text, var(--btn-text, var(--bg-ocean-dark)));
     font-weight: 700;
     font-size: 13px;
     cursor: pointer;
@@ -711,7 +725,7 @@ body.is-mac .win-btns,
 
 body.is-mac .header-bar,
 .header-bar.is-mac {
-    padding-left: 92px;
+    padding-left: 112px;
 }
 
 .update-btn-bottom {
@@ -726,7 +740,7 @@ body.is-mac .header-bar,
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s ease;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     outline: none;
     font-family: inherit;
     box-shadow: 0 2px 6px rgba(33, 150, 243, 0.15);
@@ -794,6 +808,7 @@ body.is-mac .header-bar,
     box-shadow: var(--shadow-card) !important;
     backdrop-filter: var(--blur-filter);
     overflow: hidden;
+    contain: layout paint;
 }
 
 .editor-pane {
@@ -881,6 +896,7 @@ body.is-mac .header-bar,
     flex-direction: column;
     overflow: hidden;
     min-width: 0;
+    contain: layout paint;
 }
 
 .io-section {
@@ -918,7 +934,7 @@ body.is-mac .header-bar,
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 30px rgba(0, 30, 60, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.95);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.24s ease, box-shadow 0.24s ease, background-color 0.24s ease;
 }
 
 .io-section.three-card-io .card-panel:focus-within,
@@ -969,7 +985,7 @@ body.is-mac .header-bar,
 
 .terminal-body {
     background: var(--terminal-bg, #1e2933);
-    color: var(--text-primary, #e0f0ff);
+    color: var(--terminal-text, #e0f0ff);
     flex: 1;
     padding: 12px;
     font-family: 'JetBrains Mono', monospace;
@@ -2053,7 +2069,7 @@ input[type="color"] {
     min-width: 50px;
     background: transparent;
     border: none;
-    color: var(--text-primary, #e0f0ff);
+    color: var(--terminal-text, #e0f0ff);
     font-family: 'JetBrains Mono', monospace;
     font-size: var(--panel-font-size, 13px);
     outline: none;
@@ -2111,13 +2127,14 @@ input[type="color"] {
     align-items: center;
     height: var(--statusbar-height);
     padding: 0 16px;
-    background: rgba(248, 252, 255, 0.72) !important;
-    backdrop-filter: blur(20px) saturate(190%);
-    -webkit-backdrop-filter: blur(20px) saturate(190%);
-    border-top: 1.5px solid rgba(255, 255, 255, 0.65) !important;
-    box-shadow: 0 -4px 20px rgba(0, 20, 40, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    background: var(--glass-panel-bg-strong) !important;
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(145%) blur(12px);
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(145%) blur(12px);
+    border-top: 1.5px solid var(--glass-edge) !important;
+    box-shadow: 0 -4px 20px rgba(0, 20, 40, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.78);
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--glass-text);
+    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.18);
 }
 
 .status-left,
@@ -4897,6 +4914,7 @@ body.split-active .editor-pane {
     z-index: 50;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
     transition: width 0.2s var(--transition-timing), border-color 0.2s ease, box-shadow 0.2s ease;
+    contain: layout paint;
 }
 
 .explorer-sidebar.visible {
@@ -4908,8 +4926,8 @@ body.split-active .editor-pane {
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
-    background: var(--bg-panel, #e8f4fc);
-    border-bottom: 2px solid var(--border, #e0f0ff);
+    background: var(--glass-panel-bg-strong);
+    border-bottom: 1.5px solid var(--glass-edge-soft);
     flex-shrink: 0;
 }
 
@@ -4919,7 +4937,8 @@ body.split-active .editor-pane {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-secondary, #7eb8c5);
+    color: var(--glass-text, var(--text-secondary, #7eb8c5));
+    text-shadow: 0 1px 10px rgba(255, 255, 255, 0.18);
 }
 
 .explorer-actions {
@@ -4936,7 +4955,7 @@ body.split-active .editor-pane {
     background: transparent;
     border: none;
     border-radius: 6px;
-    color: var(--text-secondary, #7eb8c5);
+    color: var(--glass-text-muted, var(--text-secondary, #7eb8c5));
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -4961,7 +4980,7 @@ body.split-active .editor-pane {
     justify-content: center;
     padding: 40px 20px;
     text-align: center;
-    color: var(--text-muted, #8abac5);
+    color: var(--glass-text-muted, var(--text-muted, #8abac5));
 }
 
 .explorer-empty svg {
@@ -4972,6 +4991,7 @@ body.split-active .editor-pane {
 .explorer-empty p {
     font-size: 13px;
     margin-bottom: 16px;
+    color: var(--glass-text-muted, var(--text-muted, #8abac5));
 }
 
 .explorer-open-btn {
@@ -5345,7 +5365,7 @@ body.split-active .editor-pane {
 [data-theme="dracula"] .explorer-empty,
 [data-theme="nord"] .explorer-empty,
 [data-theme="monokai"] .explorer-empty {
-    color: var(--text-muted, rgba(255, 255, 255, 0.5));
+    color: var(--glass-text-muted, rgba(255, 255, 255, 0.78));
 }
 
 /* File Markers - active-solving indicator */
@@ -5420,18 +5440,18 @@ body.split-active .editor-pane {
 .explorer-action-btn {
     background: transparent;
     border: none;
-    color: var(--text-muted, #7eb8c5);
+    color: var(--glass-text-muted, var(--text-muted, #7eb8c5));
     padding: 4px;
     border-radius: 6px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .explorer-action-btn:hover {
-    color: var(--text-primary, #2a5a75);
+    color: var(--glass-text, var(--text-primary, #2a5a75));
     background: color-mix(in srgb, var(--accent, #88c9ea) 22%, transparent);
     transform: translateY(-1px);
 }

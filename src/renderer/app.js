@@ -4472,6 +4472,8 @@ function setupResizer(resizerId, targetId, min, max) {
     const target = document.getElementById(targetId);
     let dragging = false;
     let startX, startW;
+    let pendingWidth = null;
+    let resizeFrame = 0;
 
     const getDynamicMax = () => {
         const viewportWidth = window.innerWidth || 1280;
@@ -4494,13 +4496,27 @@ function setupResizer(resizerId, targetId, min, max) {
         if (!dragging) return;
         const dx = startX - e.clientX;
         const dynamicMax = getDynamicMax();
-        const newW = Math.min(dynamicMax, Math.max(min, startW + dx));
-        target.style.width = newW + 'px';
+        pendingWidth = Math.min(dynamicMax, Math.max(min, startW + dx));
+        if (resizeFrame) return;
+        resizeFrame = requestAnimationFrame(() => {
+            if (pendingWidth !== null) {
+                target.style.width = pendingWidth + 'px';
+            }
+            resizeFrame = 0;
+        });
     });
 
     document.addEventListener('mouseup', () => {
         if (dragging) {
             dragging = false;
+            if (resizeFrame) {
+                cancelAnimationFrame(resizeFrame);
+                resizeFrame = 0;
+            }
+            if (pendingWidth !== null) {
+                target.style.width = pendingWidth + 'px';
+                pendingWidth = null;
+            }
             resizer.classList.remove('dragging');
             document.body.style.cursor = '';
             persistPanelSize(targetId, target.offsetWidth);
@@ -4513,6 +4529,8 @@ function setupResizerH(resizerId, targetId, min, max) {
     const target = document.getElementById(targetId);
     let dragging = false;
     let startY, startH;
+    let pendingHeight = null;
+    let resizeFrame = 0;
 
     resizer.onmousedown = e => {
         dragging = true;
@@ -4526,13 +4544,27 @@ function setupResizerH(resizerId, targetId, min, max) {
     document.addEventListener('mousemove', e => {
         if (!dragging) return;
         const dy = startY - e.clientY;
-        const newH = Math.min(max, Math.max(min, startH + dy));
-        target.style.height = newH + 'px';
+        pendingHeight = Math.min(max, Math.max(min, startH + dy));
+        if (resizeFrame) return;
+        resizeFrame = requestAnimationFrame(() => {
+            if (pendingHeight !== null) {
+                target.style.height = pendingHeight + 'px';
+            }
+            resizeFrame = 0;
+        });
     });
 
     document.addEventListener('mouseup', () => {
         if (dragging) {
             dragging = false;
+            if (resizeFrame) {
+                cancelAnimationFrame(resizeFrame);
+                resizeFrame = 0;
+            }
+            if (pendingHeight !== null) {
+                target.style.height = pendingHeight + 'px';
+                pendingHeight = null;
+            }
             resizer.classList.remove('dragging');
             document.body.style.cursor = '';
             persistPanelSize(targetId, target.offsetHeight);
@@ -7299,78 +7331,6 @@ function buildCompileFlags() {
 
 initBatchTesting();
 
-// ============================================================================
-// AUTO UPDATE - Check for new versions
-// ============================================================================
-let updateInfo = null;
-let updateDismissedVersion = null;
-
-async function checkForUpdates() {
-    if (!window.electronAPI?.checkForUpdates) return;
-
-    try {
-        const info = await window.electronAPI.checkForUpdates();
-
-        if (info.hasUpdate) {
-
-            const dismissedVersion = localStorage.getItem('dismissedUpdateVersion');
-            if (dismissedVersion === info.latestVersion) {
-                console.log('[Update] User previously dismissed this version');
-                return;
-            }
-
-            updateInfo = info;
-            showUpdateNotification(info);
-        }
-    } catch (error) {
-        console.error('[Update] Check failed:', error);
-    }
-}
-
-function showUpdateNotification(info) {
-    const overlay = document.getElementById('update-overlay');
-    const currentEl = document.getElementById('update-current');
-    const newEl = document.getElementById('update-new');
-    const notesEl = document.getElementById('update-notes');
-
-    if (!overlay) return;
-
-    // Update content
-    if (currentEl) currentEl.textContent = `v${info.currentVersion}`;
-    if (newEl) newEl.textContent = `v${info.latestVersion}`;
-
-    if (notesEl) {
-        notesEl.innerHTML = '<p style="text-align: center; font-weight: 600; font-size: 15px; margin: 10px 0;">A new update is available. Download it to get the latest fixes and features.</p>';
-    }
-
-    overlay.classList.add('show');
-
-    document.getElementById('update-close')?.addEventListener('click', hideUpdateNotification);
-    document.getElementById('update-later')?.addEventListener('click', () => {
-        hideUpdateNotification();
-    });
-    document.getElementById('update-download')?.addEventListener('click', () => {
-        window.electronAPI.openReleasePage(info.releaseUrl);
-        hideUpdateNotification();
-    });
-
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) hideUpdateNotification();
-    });
-}
-
-function hideUpdateNotification() {
-    const overlay = document.getElementById('update-overlay');
-    if (overlay) {
-        overlay.classList.remove('show');
-    }
-}
-
-
-setTimeout(() => {
-    checkForUpdates();
-}, 3000);
-
 
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'F11') {
@@ -7393,7 +7353,7 @@ function syncTerminalTheme() {
     if (!window.TerminalManager) return;
     const cs = getComputedStyle(document.documentElement);
     const bg = (cs.getPropertyValue('--terminal-bg') || '#1e2933').trim();
-    const fg = (cs.getPropertyValue('--text-primary') || '#e0f0ff').trim();
+    const fg = (cs.getPropertyValue('--terminal-text') || cs.getPropertyValue('--text-primary') || '#e0f0ff').trim();
     TerminalManager.applyTheme({
         background: bg || '#1e2933',
         foreground: fg || '#e0f0ff',
@@ -7413,8 +7373,13 @@ function initXtermTerminal() {
     // toggle, window resize, panel show/hide). ResizeObserver coalesces these.
     const termEl = document.getElementById('terminal');
     if (termEl && typeof ResizeObserver !== 'undefined') {
+        let fitFrame = 0;
         const ro = new ResizeObserver(() => {
-            requestAnimationFrame(() => TerminalManager.fit());
+            if (fitFrame) return;
+            fitFrame = requestAnimationFrame(() => {
+                TerminalManager.fit();
+                fitFrame = 0;
+            });
         });
         ro.observe(termEl);
     }
@@ -7586,7 +7551,7 @@ async function initAbout() {
     const githubBtn = document.getElementById('btn-github');
     if (githubBtn) {
         githubBtn.onclick = () => {
-            window.electronAPI.openReleasePage('https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP');
+            window.electronAPI.openReleasePage('https://github.com/tahoangphuc111/Sameko-Dev-CPP');
         };
     }
 
@@ -7621,6 +7586,7 @@ async function initAbout() {
 let updateDownloaded = false;
 let isPortableVersion = false;
 let pendingUpdateVersion = null;
+let latestReleaseUrl = 'https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases';
 
 // Detect portable version (non-blocking)
 function detectPortableVersion() {
@@ -7743,6 +7709,7 @@ function handleUpdateStatus(data) {
 
         case 'update-not-available':
             console.log('[Update] No updates available');
+            hideStatusDownloadButton();
             // Don't show popup when no update is available
             break;
 
@@ -7844,8 +7811,9 @@ function handleUpdateStatus(data) {
     }
 }
 
-async function checkForUpdates() {
-    if (!window.electronAPI) return;
+async function checkForUpdates(showWhenNone = true) {
+    const foundGitHubUpdate = await autoCheckGitHubUpdate({ showWhenNone });
+    if (foundGitHubUpdate || !window.electronAPI) return;
 
     try {
         await window.electronAPI.checkForUpdates();
@@ -7871,6 +7839,9 @@ function restartToUpdate() {
 }
 
 function showCornerUpdateBadge(version, releaseUrl) {
+    latestReleaseUrl = releaseUrl || latestReleaseUrl;
+    updateStatusDownloadButton(version, latestReleaseUrl);
+
     // 1. Status Bar Corner Badge (Bottom Right)
     const statusBarRight = document.querySelector('.status-bar .status-right');
     let statusBadge = document.getElementById('status-update-badge');
@@ -7924,20 +7895,65 @@ function isNewerVersion(latest, current) {
     return false;
 }
 
-async function autoCheckGitHubUpdate() {
+function updateStatusDownloadButton(version, releaseUrl) {
+    const statusUpdateBtn = document.getElementById('status-update-btn');
+    const statusUpdateText = document.getElementById('status-update-text');
+    if (!statusUpdateBtn) return;
+
+    latestReleaseUrl = releaseUrl || latestReleaseUrl;
+    statusUpdateBtn.style.display = 'inline-flex';
+    statusUpdateBtn.title = `Download Sameko Dev C++ v${version || 'latest'}`;
+    statusUpdateBtn.dataset.releaseUrl = latestReleaseUrl;
+    if (statusUpdateText) {
+        statusUpdateText.textContent = version ? `Download v${version}` : 'Download Update';
+    }
+}
+
+function hideStatusDownloadButton() {
+    const statusUpdateBtn = document.getElementById('status-update-btn');
+    if (statusUpdateBtn) {
+        statusUpdateBtn.style.display = 'none';
+        delete statusUpdateBtn.dataset.releaseUrl;
+    }
+}
+
+async function getCurrentAppVersion() {
+    if (window.electronAPI?.getCurrentVersion) {
+        try {
+            const version = await window.electronAPI.getCurrentVersion();
+            if (version) return String(version);
+        } catch (e) {
+            console.log('[Update] Could not read app version from main process:', e.message);
+        }
+    }
+    return '1.2.0';
+}
+
+async function autoCheckGitHubUpdate(options = {}) {
     try {
-        const currentVer = '1.2.0';
+        const currentVer = await getCurrentAppVersion();
         const response = await fetch('https://api.github.com/repos/tahoangphuc111/Sameko-Dev-CPP/releases/latest');
-        if (!response.ok) return;
+        if (!response.ok) {
+            hideStatusDownloadButton();
+            return false;
+        }
         const data = await response.json();
 
         const latestTag = (data.tag_name || '').replace(/^v/, '');
         if (latestTag && isNewerVersion(latestTag, currentVer)) {
             console.log(`[Update] New release found on GitHub: v${latestTag} (current: v${currentVer})`);
             showCornerUpdateBadge(latestTag, data.html_url);
+            return true;
         }
+        hideStatusDownloadButton();
+        if (options.showWhenNone && typeof showToast === 'function') {
+            showToast('Sameko Dev C++ is up to date.', 'info', 3000);
+        }
+        return false;
     } catch (e) {
         console.log('[Update] Release check info:', e.message);
+        hideStatusDownloadButton();
+        return false;
     }
 }
 
@@ -7951,9 +7967,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (updateDownloaded && window.electronAPI?.quitAndInstall) {
                 window.electronAPI.quitAndInstall();
             } else if (window.electronAPI?.openReleasePage) {
-                window.electronAPI.openReleasePage('https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases');
+                window.electronAPI.openReleasePage(statusUpdateBtn.dataset.releaseUrl || latestReleaseUrl);
             } else {
-                window.open('https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases', '_blank');
+                window.open(statusUpdateBtn.dataset.releaseUrl || latestReleaseUrl, '_blank');
             }
         };
     }
@@ -8061,7 +8077,7 @@ function showTabContextMenu(e, tab) {
             align-items: center;
             gap: 10px;
             opacity: ${item.disabled ? '0.5' : '1'};
-            transition: all 0.15s;
+            transition: background-color 0.15s, color 0.15s, opacity 0.15s;
             color: ${item.disabled ? textSecondary : textPrimary};
             border-radius: 10px;
             font-weight: 600;
@@ -8168,4 +8184,3 @@ window.addEventListener('themeCustomizerSave', (e) => {
     // e.detail.theme contains the full theme data (meta, colors, editor, terminal)
     // e.detail.timestamp contains the save timestamp
 });
-
