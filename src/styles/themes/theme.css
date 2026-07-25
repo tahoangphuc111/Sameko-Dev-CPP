@@ -9003,3 +9003,96 @@ html[data-theme*="dark"] {
         min-width: 170px !important;
     }
 }
+
+/* ===== MAX PERFORMANCE PATH ===== */
+body.performance-mode {
+    --transition-duration: 0.001s;
+    --transition-timing: linear;
+    --glass-blur: 0px;
+    --glass-blur-light: 0px;
+    --glass-highlight-opacity: 0;
+    --shadow-soft: 0 1px 4px rgba(15, 23, 42, 0.10);
+    --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.10);
+}
+
+body.performance-mode *,
+body.performance-mode *::before,
+body.performance-mode *::after {
+    animation: none !important;
+    transition-duration: 0.001s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+    will-change: auto !important;
+}
+
+body.performance-mode .liquidglass,
+body.performance-mode .liquidglass-light,
+body.performance-mode .header-bar,
+body.performance-mode .status-bar,
+body.performance-mode .panel-head,
+body.performance-mode .terminal-section,
+body.performance-mode .problems-panel,
+body.performance-mode .editor-section,
+body.performance-mode .dropdown,
+body.performance-mode .update-popup,
+body.performance-mode .cc-popup,
+body.performance-mode .color-picker-popup,
+body.performance-mode .fullscreen-popup,
+body.performance-mode .local-history-modal,
+body.performance-mode .snippet-editor-popup,
+body.performance-mode .io-section.three-card-io .card-panel,
+body.performance-mode .welcome-box,
+body.performance-mode .note-dialog,
+body.performance-mode .settings-popup,
+body.performance-mode .tc6-container,
+body.performance-mode .explorer-sidebar,
+body.performance-mode .explorer-header,
+body.performance-mode .context-menu,
+body.performance-mode .dialog-overlay .dialog,
+body.performance-mode .toggle-btn,
+body.performance-mode .menu-group,
+body.performance-mode .logo,
+body.performance-mode .action-btn,
+body.performance-mode .tab,
+body.performance-mode .tab.active,
+body.performance-mode .tab-add,
+body.performance-mode .menu-btn,
+body.performance-mode .hamburger-btn,
+body.performance-mode .explorer-action-btn,
+body.performance-mode .update-btn-bottom,
+body.performance-mode .liquid-glass-settings .setting-row,
+body.performance-mode .liquid-glass-settings select,
+body.performance-mode .liquid-glass-settings .slider {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: var(--shadow-card) !important;
+}
+
+body.performance-mode .liquidglass::before,
+body.performance-mode .header-bar::before,
+body.performance-mode .status-bar::before,
+body.performance-mode .explorer-sidebar::before,
+body.performance-mode .terminal-section::before,
+body.performance-mode .editor-section::before,
+body.performance-mode .problems-panel::before,
+body.performance-mode .io-section.three-card-io .card-panel::before,
+body.performance-mode .welcome-box::before,
+body.performance-mode .settings-popup::before,
+body.performance-mode .note-dialog::before,
+body.performance-mode .dropdown::before,
+body.performance-mode .liquid-glass-settings .setting-row::before {
+    content: none !important;
+}
+
+body.performance-mode .menu-btn:hover,
+body.performance-mode .toggle-btn:hover,
+body.performance-mode .action-btn:hover,
+body.performance-mode .tab:hover,
+body.performance-mode .tab-add:hover,
+body.performance-mode .explorer-action-btn:hover,
+body.performance-mode .liquid-glass-settings .setting-row:hover {
+    transform: none !important;
+    filter: none !important;
+}
