@@ -22,7 +22,11 @@
     outline: none;
 }
 
-:root {
+:root, :host {
+    --glass-frost: 0.12;
+    --glass-saturation: 1.35;
+    --filter-id: url(#glass-filter);
+
     /* Color Palette - Sameko Saba Style (Original) */
     --bg-ocean-light: #eff8fe;
     --bg-ocean-medium: #bce2f5;
@@ -250,17 +254,25 @@ body.customizer-open::before {
     background: transparent;
 }
 
-/* ===== HEADER ===== */
-/* ===== HEADER - LIQUID GLASS (iOS 27 STYLE) ===== */
+.liquidglass,
+.header-bar,
+.status-bar,
+.io-section.three-card-io .card-panel,
+.welcome-box,
+.note-dialog,
+.settings-popup,
+.tc6-container {
+    background: hsl(0 0% 100% / var(--glass-frost, 0.12)) !important;
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(20px) !important;
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.35)) blur(20px) !important;
+    box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.55), inset 0 0 10px 4px rgba(255, 255, 255, 0.25), inset 0 4px 16px rgba(17, 17, 26, 0.05), inset 0 8px 24px rgba(17, 17, 26, 0.05), inset 0 6px 56px rgba(17, 17, 26, 0.05), 0 10px 30px rgba(0, 20, 40, 0.08) !important;
+}
+
 .header-bar {
     display: flex;
     align-items: center;
     height: var(--header-height);
-    background: rgba(248, 252, 255, 0.72) !important;
-    backdrop-filter: blur(20px) saturate(190%);
-    -webkit-backdrop-filter: blur(20px) saturate(190%);
     border-bottom: 1.5px solid rgba(255, 255, 255, 0.65) !important;
-    box-shadow: 0 4px 20px rgba(0, 20, 40, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.85);
     padding: 0 16px;
     gap: 16px;
     -webkit-app-region: drag;

@@ -1408,6 +1408,12 @@
     <script src="features/terminal/terminal-manager.js"></script>
     <script src="features/debugger/debugger-ui.js"></script>
     <script src="renderer/app.js"></script>
+    <svg style="display:none" class="glass-surface__filter">
+        <filter id="glass-filter">
+            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
 </body>
 
 </html>
