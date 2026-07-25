@@ -574,14 +574,13 @@ function resolveMultiCursorModifier() {
 }
 
 function createEditor(containerId) {
-    const performanceMode = App.settings.appearance.performanceMode;
     const editor = monaco.editor.create(document.getElementById(containerId), {
         value: '',
         language: 'cpp',
         theme: App.settings.appearance.theme || 'kawaii-dark',
         fontSize: App.settings.editor.fontSize,
         fontFamily: App.settings.editor.fontFamily,
-        fontLigatures: !performanceMode,
+        fontLigatures: true,
         wordWrap: App.settings.editor.wordWrap ? 'on' : 'off',
         multiCursorModifier: resolveMultiCursorModifier(),
         scrollBeyondLastLine: false,
@@ -590,16 +589,9 @@ function createEditor(containerId) {
         insertSpaces: true,
         detectIndentation: false,
         emptySelectionClipboard: false,
-        cursorBlinking: performanceMode ? 'solid' : 'smooth',
-        smoothScrolling: !performanceMode,
-        bracketPairColorization: { enabled: !performanceMode },
-        renderLineHighlight: performanceMode ? 'none' : 'line',
-        occurrencesHighlight: !performanceMode,
-        selectionHighlight: !performanceMode,
-        renderWhitespace: 'none',
-        renderControlCharacters: false,
-        roundedSelection: !performanceMode,
-        links: !performanceMode,
+        cursorBlinking: App.settings.appearance.performanceMode ? 'solid' : 'smooth',
+        smoothScrolling: !App.settings.appearance.performanceMode,
+        bracketPairColorization: { enabled: !App.settings.appearance.performanceMode },
         padding: { top: 12 },
         // Editor zoom is handled solely by initCtrlWheelZoom + fontSize. Monaco's
         // built-in mouseWheelZoom applies a separate global zoom that re-applies on
@@ -623,9 +615,9 @@ function createEditor(containerId) {
         },
 
         minimap: {
-            enabled: App.settings.editor.minimap && !performanceMode,
+            enabled: App.settings.editor.minimap && !App.settings.appearance.performanceMode,
             showSlider: 'always',
-            renderCharacters: !performanceMode,
+            renderCharacters: !App.settings.appearance.performanceMode,
             scale: 1
         },
 
@@ -3198,29 +3190,16 @@ function clearLiveCheckMarkers() {
 }
 
 function applySettings() {
-    const performanceMode = App.settings.appearance.performanceMode;
     const opts = {
         fontSize: App.settings.editor.fontSize,
         fontFamily: App.settings.editor.fontFamily,
-        fontLigatures: !performanceMode,
         tabSize: App.settings.editor.tabSize,
         insertSpaces: true,
         detectIndentation: false,
         emptySelectionClipboard: false,
-        minimap: {
-            enabled: App.settings.editor.minimap && !performanceMode,
-            renderCharacters: !performanceMode
-        },
+        minimap: { enabled: App.settings.editor.minimap },
         wordWrap: App.settings.editor.wordWrap ? 'on' : 'off',
         multiCursorModifier: resolveMultiCursorModifier(),
-        cursorBlinking: performanceMode ? 'solid' : 'smooth',
-        smoothScrolling: !performanceMode,
-        bracketPairColorization: { enabled: !performanceMode },
-        renderLineHighlight: performanceMode ? 'none' : 'line',
-        occurrencesHighlight: !performanceMode,
-        selectionHighlight: !performanceMode,
-        roundedSelection: !performanceMode,
-        links: !performanceMode,
         quickSuggestions: {
             other: (App.settings.editor.intellisense !== false || App.settings.editor.snippets !== false),
             comments: false,
@@ -3249,16 +3228,11 @@ function applySettings() {
     opts.mouseWheelZoom = false;
 
     // Performance optimizations
-    if (performanceMode) {
+    if (App.settings.appearance.performanceMode) {
         opts.minimap = { enabled: false };
         opts.bracketPairColorization = { enabled: false };
         opts.cursorBlinking = 'solid';
         opts.smoothScrolling = false;
-        opts.fontLigatures = false;
-        opts.renderLineHighlight = 'none';
-        opts.occurrencesHighlight = false;
-        opts.selectionHighlight = false;
-        opts.links = false;
     }
 
     if (App.editor) App.editor.updateOptions(opts);
@@ -3269,7 +3243,7 @@ function applySettings() {
     document.documentElement.style.setProperty('--panel-font-size', panelFontSize + 'px');
     if (window.TerminalManager) TerminalManager.setFontSize(panelFontSize);
 
-    if (performanceMode) {
+    if (App.settings.appearance.performanceMode) {
         document.body.classList.add('performance-mode');
     } else {
         document.body.classList.remove('performance-mode');
@@ -3287,12 +3261,12 @@ function applySettings() {
 
 function applyLiquidGlassSettings(appearanceOverride = null) {
     const appearance = appearanceOverride || App.settings?.appearance || DEFAULT_SETTINGS.appearance;
-    const performanceMode = appearance.performanceMode === true;
-    const enabled = appearance.liquidGlass !== false && !performanceMode;
+    const enabled = appearance.liquidGlass !== false;
     const selectedMode = ['subtle', 'balanced', 'strong'].includes(appearance.liquidGlassMode)
         ? appearance.liquidGlassMode
         : 'balanced';
-    const mode = selectedMode;
+    const performanceMode = appearance.performanceMode === true;
+    const mode = performanceMode ? 'subtle' : selectedMode;
     const refractionEnabled = appearance.liquidGlassRefraction !== false && !performanceMode;
 
     document.body.classList.toggle('glass-disabled', !enabled);
