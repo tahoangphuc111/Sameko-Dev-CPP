@@ -43,7 +43,7 @@ function cleanupOldBuildArtifacts(buildsDir) {
     try {
         if (!fs.existsSync(buildsDir)) return;
         const entries = fs.readdirSync(buildsDir, { withFileTypes: true })
-            .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.exe'))
+            .filter((e) => e.isFile() && !e.name.startsWith('.'))
             .map((e) => {
                 const fullPath = path.join(buildsDir, e.name);
                 const stat = fs.statSync(fullPath);
