@@ -765,10 +765,38 @@
                             </div>
 
                             <!-- Options Section -->
+                            <div class="appearance-section liquid-glass-settings">
+                                <h3>Liquid Glass UI</h3>
+                                <div class="setting-row">
+                                    <label>Enable Liquid Glass <span class="tooltip"
+                                            title="Use layered translucent surfaces, edge highlights, and SVG refraction">?</span></label>
+                                    <label class="switch">
+                                        <input type="checkbox" id="set-liquidGlass" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-row">
+                                    <label>Glass Intensity</label>
+                                    <select id="set-liquidGlassMode">
+                                        <option value="subtle">Subtle</option>
+                                        <option value="balanced">Balanced</option>
+                                        <option value="strong">Strong</option>
+                                    </select>
+                                </div>
+                                <div class="setting-row">
+                                    <label>Refraction Highlights <span class="tooltip"
+                                            title="Adds SVG displacement and specular highlights to glass surfaces">?</span></label>
+                                    <label class="switch">
+                                        <input type="checkbox" id="set-liquidGlassRefraction" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+
                             <div class="appearance-section">
                                 <div class="setting-row">
-                                    <label>Reduce Animations <span class="tooltip"
-                                            title="Disable fancy animations and transitions for smoother experience on low-end devices">?</span></label>
+                                    <label>Performance Mode <span class="tooltip"
+                                            title="Reduce expensive glass filters, animations, and editor effects for smoother high-refresh displays">?</span></label>
                                     <label class="switch">
                                         <input type="checkbox" id="set-performanceMode" checked>
                                         <span class="slider"></span>
@@ -1313,7 +1341,7 @@
                     <!-- CARD 3: EXPECTED OUTPUT -->
                     <div class="io-panel io-panel-expected card-panel">
                         <div class="panel-head">
-                            <span class="panel-title expected" style="color:var(--accent,#4fc3f7);"><i class="fa-solid fa-bullseye"></i> EXPECTED OUTPUT</span>
+                            <span class="panel-title expected"><i class="fa-solid fa-bullseye"></i> EXPECTED OUTPUT</span>
                             <div class="io-panel-actions" style="display:flex;gap:4px;align-items:center;">
                                 <button class="test-nav-btn" id="btn-paste-expected" title="Paste expected output from clipboard">
                                     <i class="fa-solid fa-paste"></i>
@@ -1421,11 +1449,11 @@
     <script src="renderer/app.js"></script>
     <svg style="display:none" class="glass-surface__filter">
         <filter id="glass-filter" color-interpolation-filters="sRGB">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="0.14" result="glass-soften" />
-            <feTurbulence type="fractalNoise" baseFrequency="0.018 0.032" numOctaves="1" seed="9" result="glass-map" />
-            <feDisplacementMap in="glass-soften" in2="glass-map" scale="2.4" xChannelSelector="R" yChannelSelector="G" result="glass-refract" />
-            <feColorMatrix in="glass-refract" type="saturate" values="1.12" result="glass-color" />
-            <feSpecularLighting in="glass-map" surfaceScale="2" specularConstant="0.42" specularExponent="18" lighting-color="#ffffff" result="glass-specular">
+            <feGaussianBlur id="glass-filter-soften" in="SourceGraphic" stdDeviation="0.16" result="glass-soften" />
+            <feTurbulence id="glass-filter-map" type="fractalNoise" baseFrequency="0.014 0.028" numOctaves="2" seed="9" result="glass-map" />
+            <feDisplacementMap id="glass-filter-displace" in="glass-soften" in2="glass-map" scale="4.2" xChannelSelector="R" yChannelSelector="G" result="glass-refract" />
+            <feColorMatrix id="glass-filter-color" in="glass-refract" type="saturate" values="1.22" result="glass-color" />
+            <feSpecularLighting id="glass-filter-specular" in="glass-map" surfaceScale="2.8" specularConstant="0.48" specularExponent="22" lighting-color="#ffffff" result="glass-specular">
                 <feDistantLight azimuth="-60" elevation="45" />
             </feSpecularLighting>
             <feComposite in="glass-specular" in2="glass-color" operator="in" result="glass-rim" />

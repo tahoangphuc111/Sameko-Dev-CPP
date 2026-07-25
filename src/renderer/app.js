@@ -56,7 +56,10 @@ const DEFAULT_SETTINGS = {
         theme: 'monokai',
         bgOpacity: 50,
         bgUrl: '',
-        performanceMode: true
+        performanceMode: true,
+        liquidGlass: true,
+        liquidGlassMode: 'balanced',
+        liquidGlassRefraction: true
     },
     startup: {
         behavior: 'restore-previous-session'
@@ -1433,6 +1436,26 @@ function initSettings() {
         };
     }
 
+    const liquidGlassToggle = document.getElementById('set-liquidGlass');
+    const liquidGlassMode = document.getElementById('set-liquidGlassMode');
+    const liquidGlassRefraction = document.getElementById('set-liquidGlassRefraction');
+    const performanceModeToggle = document.getElementById('set-performanceMode');
+    const previewLiquidGlass = () => {
+        const savedAppearance = App.settings.appearance || DEFAULT_SETTINGS.appearance;
+        const previewAppearance = {
+            ...savedAppearance,
+            performanceMode: performanceModeToggle ? performanceModeToggle.checked : savedAppearance.performanceMode === true,
+            liquidGlass: liquidGlassToggle ? liquidGlassToggle.checked : savedAppearance.liquidGlass !== false,
+            liquidGlassMode: liquidGlassMode ? liquidGlassMode.value : savedAppearance.liquidGlassMode || 'balanced',
+            liquidGlassRefraction: liquidGlassRefraction ? liquidGlassRefraction.checked : savedAppearance.liquidGlassRefraction !== false
+        };
+        applyLiquidGlassSettings(previewAppearance);
+    };
+    if (liquidGlassToggle) liquidGlassToggle.onchange = previewLiquidGlass;
+    if (liquidGlassMode) liquidGlassMode.onchange = previewLiquidGlass;
+    if (liquidGlassRefraction) liquidGlassRefraction.onchange = previewLiquidGlass;
+    if (performanceModeToggle) performanceModeToggle.onchange = previewLiquidGlass;
+
     // Live Theme Update
     document.getElementById('set-theme').onchange = () => {
         const newTheme = document.getElementById('set-theme').value;
@@ -2157,6 +2180,12 @@ function openSettings() {
     selectThemeFromCarousel(App.settings.appearance.theme, true);
     document.getElementById('set-editorColorScheme').value = App.settings.editor.colorScheme || 'auto';
     document.getElementById('set-performanceMode').checked = App.settings.appearance.performanceMode || false;
+    const liquidGlassToggle = document.getElementById('set-liquidGlass');
+    const liquidGlassMode = document.getElementById('set-liquidGlassMode');
+    const liquidGlassRefraction = document.getElementById('set-liquidGlassRefraction');
+    if (liquidGlassToggle) liquidGlassToggle.checked = App.settings.appearance.liquidGlass !== false;
+    if (liquidGlassMode) liquidGlassMode.value = App.settings.appearance.liquidGlassMode || 'balanced';
+    if (liquidGlassRefraction) liquidGlassRefraction.checked = App.settings.appearance.liquidGlassRefraction !== false;
 
     // Background settings (optional - may not exist if Background section removed)
     const bgOpacitySlider = document.getElementById('set-bgOpacity');
@@ -2214,6 +2243,7 @@ function cancelSettings() {
     if (typeof ThemeManager !== 'undefined' && App.settings?.appearance?.theme) {
         ThemeManager.setTheme(App.settings.appearance.theme);
     }
+    applyLiquidGlassSettings();
     closeSettings();
 }
 
@@ -2267,6 +2297,12 @@ function saveSettingsAndClose() {
 
     App.settings.appearance.theme = document.getElementById('set-theme').value;
     App.settings.appearance.performanceMode = document.getElementById('set-performanceMode').checked;
+    const liquidGlassToggle = document.getElementById('set-liquidGlass');
+    const liquidGlassMode = document.getElementById('set-liquidGlassMode');
+    const liquidGlassRefraction = document.getElementById('set-liquidGlassRefraction');
+    if (liquidGlassToggle) App.settings.appearance.liquidGlass = liquidGlassToggle.checked;
+    if (liquidGlassMode) App.settings.appearance.liquidGlassMode = liquidGlassMode.value;
+    if (liquidGlassRefraction) App.settings.appearance.liquidGlassRefraction = liquidGlassRefraction.checked;
 
     // Background settings (optional - may not exist if Background section removed)
     const bgOpacityEl = document.getElementById('set-bgOpacity');
@@ -3213,6 +3249,7 @@ function applySettings() {
         document.body.classList.remove('performance-mode');
     }
 
+    applyLiquidGlassSettings();
 
     applyTheme(App.settings.appearance.theme);
 
@@ -3220,6 +3257,37 @@ function applySettings() {
     applyDiscordSetting();
     updateProblemSummaryUI();
     setLiveCheckUIState(App.settings.editor.liveCheck ? (App.problems.length > 0 ? 'issues' : 'idle') : 'disabled');
+}
+
+function applyLiquidGlassSettings(appearanceOverride = null) {
+    const appearance = appearanceOverride || App.settings?.appearance || DEFAULT_SETTINGS.appearance;
+    const enabled = appearance.liquidGlass !== false;
+    const selectedMode = ['subtle', 'balanced', 'strong'].includes(appearance.liquidGlassMode)
+        ? appearance.liquidGlassMode
+        : 'balanced';
+    const performanceMode = appearance.performanceMode === true;
+    const mode = performanceMode ? 'subtle' : selectedMode;
+    const refractionEnabled = appearance.liquidGlassRefraction !== false && !performanceMode;
+
+    document.body.classList.toggle('glass-disabled', !enabled);
+    document.body.classList.toggle('glass-no-refraction', !refractionEnabled || !enabled);
+    document.body.classList.toggle('glass-performance', enabled && performanceMode);
+    document.body.dataset.glassMode = enabled ? mode : 'off';
+
+    const filterValues = {
+        subtle: { blur: '0.10', frequency: '0.018 0.034', scale: '2.2', saturation: '1.12', surface: '1.8', constant: '0.34', exponent: '16' },
+        balanced: { blur: '0.16', frequency: '0.014 0.028', scale: '4.2', saturation: '1.22', surface: '2.8', constant: '0.48', exponent: '22' },
+        strong: { blur: '0.22', frequency: '0.010 0.022', scale: '6.4', saturation: '1.36', surface: '3.8', constant: '0.58', exponent: '28' }
+    };
+    const values = filterValues[mode] || filterValues.balanced;
+    const setAttr = (id, name, value) => document.getElementById(id)?.setAttribute(name, value);
+    setAttr('glass-filter-soften', 'stdDeviation', values.blur);
+    setAttr('glass-filter-map', 'baseFrequency', values.frequency);
+    setAttr('glass-filter-displace', 'scale', values.scale);
+    setAttr('glass-filter-color', 'values', values.saturation);
+    setAttr('glass-filter-specular', 'surfaceScale', values.surface);
+    setAttr('glass-filter-specular', 'specularConstant', values.constant);
+    setAttr('glass-filter-specular', 'specularExponent', values.exponent);
 }
 
 /**

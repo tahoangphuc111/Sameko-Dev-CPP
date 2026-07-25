@@ -26,6 +26,9 @@
     --glass-frost: 0.18;
     --glass-saturation: 1.28;
     --filter-id: url(#glass-filter);
+    --glass-blur: 14px;
+    --glass-blur-light: 10px;
+    --glass-highlight-opacity: 0.72;
     --glass-panel-bg: rgba(238, 246, 255, 0.22);
     --glass-panel-bg-strong: rgba(238, 246, 255, 0.34);
     --glass-edge: rgba(255, 255, 255, 0.72);
@@ -133,6 +136,62 @@ body.performance-mode {
     /* Faster transitions */
     --transition-timing: ease-out;
     --transition-duration: 0.1s;
+}
+
+body[data-glass-mode="subtle"] {
+    --glass-saturation: 1.14;
+    --glass-blur: 9px;
+    --glass-blur-light: 6px;
+    --glass-highlight-opacity: 0.44;
+    --glass-panel-bg: rgba(238, 246, 255, 0.28);
+    --glass-panel-bg-strong: rgba(238, 246, 255, 0.42);
+    --glass-rim-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58), inset 0 -1px 0 rgba(255, 255, 255, 0.12), 0 6px 20px rgba(6, 12, 24, 0.12);
+}
+
+body[data-glass-mode="balanced"] {
+    --glass-saturation: 1.28;
+    --glass-blur: 14px;
+    --glass-blur-light: 10px;
+    --glass-highlight-opacity: 0.72;
+}
+
+body[data-glass-mode="strong"] {
+    --glass-saturation: 1.46;
+    --glass-blur: 20px;
+    --glass-blur-light: 15px;
+    --glass-highlight-opacity: 0.88;
+    --glass-panel-bg: rgba(238, 246, 255, 0.18);
+    --glass-panel-bg-strong: rgba(238, 246, 255, 0.30);
+    --glass-rim-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), inset 0 -1px 0 rgba(255, 255, 255, 0.22), inset 0 0 28px rgba(255, 255, 255, 0.22), 0 14px 44px rgba(6, 12, 24, 0.18);
+}
+
+body.glass-disabled {
+    --glass-panel-bg: var(--bg-glass-heavy);
+    --glass-panel-bg-strong: var(--bg-glass);
+    --glass-highlight-opacity: 0;
+}
+
+html[data-theme="kawaii-light"],
+html[data-theme="sakura"],
+html:not([data-theme]) {
+    --glass-text: #17324a;
+    --glass-text-muted: #45677c;
+    --glass-edge: rgba(255, 255, 255, 0.78);
+    --glass-edge-soft: rgba(42, 90, 117, 0.16);
+}
+
+html[data-theme="kawaii-dark"],
+html[data-theme="dracula"],
+html[data-theme="monokai"],
+html[data-theme="nord"],
+html[data-theme="one-dark"],
+html[data-theme*="dark"] {
+    --glass-text: rgba(246, 248, 255, 0.94);
+    --glass-text-muted: rgba(210, 220, 235, 0.72);
+    --glass-panel-bg: rgba(24, 28, 38, 0.34);
+    --glass-panel-bg-strong: rgba(32, 37, 50, 0.46);
+    --glass-edge: rgba(255, 255, 255, 0.22);
+    --glass-edge-soft: rgba(255, 255, 255, 0.12);
 }
 
 /* Hard disable animations for critical UI components in performance mode */
@@ -288,8 +347,8 @@ body.customizer-open::before {
 .context-menu,
 .dialog-overlay .dialog {
     background: var(--glass-panel-bg) !important;
-    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(14px) !important;
-    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(14px) !important;
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
     border-color: var(--glass-edge-soft) !important;
     box-shadow: var(--glass-rim-shadow) !important;
     color: var(--glass-text);
@@ -306,9 +365,64 @@ body.customizer-open::before {
 .update-btn-bottom,
 .explorer-action-btn:hover {
     background: var(--glass-panel-bg-strong) !important;
-    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(10px) !important;
-    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(10px) !important;
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur-light, 10px)) !important;
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur-light, 10px)) !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(255, 255, 255, 0.16), 0 6px 18px rgba(6, 12, 24, 0.14) !important;
+}
+
+body.glass-no-refraction .liquidglass,
+body.glass-no-refraction .header-bar,
+body.glass-no-refraction .status-bar,
+body.glass-no-refraction .panel-head,
+body.glass-no-refraction .terminal-section,
+body.glass-no-refraction .problems-panel,
+body.glass-no-refraction .editor-section,
+body.glass-no-refraction .dropdown,
+body.glass-no-refraction .update-popup,
+body.glass-no-refraction .cc-popup,
+body.glass-no-refraction .color-picker-popup,
+body.glass-no-refraction .fullscreen-popup,
+body.glass-no-refraction .local-history-modal,
+body.glass-no-refraction .snippet-editor-popup,
+body.glass-no-refraction .io-section.three-card-io .card-panel,
+body.glass-no-refraction .welcome-box,
+body.glass-no-refraction .note-dialog,
+body.glass-no-refraction .settings-popup,
+body.glass-no-refraction .tc6-container,
+body.glass-no-refraction .explorer-sidebar,
+body.glass-no-refraction .explorer-header,
+body.glass-no-refraction .context-menu,
+body.glass-no-refraction .dialog-overlay .dialog {
+    -webkit-backdrop-filter: saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
+    backdrop-filter: saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
+}
+
+body.glass-disabled .liquidglass,
+body.glass-disabled .header-bar,
+body.glass-disabled .status-bar,
+body.glass-disabled .panel-head,
+body.glass-disabled .terminal-section,
+body.glass-disabled .problems-panel,
+body.glass-disabled .editor-section,
+body.glass-disabled .dropdown,
+body.glass-disabled .update-popup,
+body.glass-disabled .cc-popup,
+body.glass-disabled .color-picker-popup,
+body.glass-disabled .fullscreen-popup,
+body.glass-disabled .local-history-modal,
+body.glass-disabled .snippet-editor-popup,
+body.glass-disabled .io-section.three-card-io .card-panel,
+body.glass-disabled .welcome-box,
+body.glass-disabled .note-dialog,
+body.glass-disabled .settings-popup,
+body.glass-disabled .tc6-container,
+body.glass-disabled .explorer-sidebar,
+body.glass-disabled .explorer-header,
+body.glass-disabled .context-menu,
+body.glass-disabled .dialog-overlay .dialog {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: var(--shadow-card) !important;
 }
 
 .liquidglass::before,
@@ -2132,6 +2246,68 @@ input[type="color"] {
 .switch input:checked+.slider::before {
     transform: translateX(24px);
     background: var(--bg-ocean-dark);
+}
+
+.liquid-glass-settings {
+    margin-bottom: 14px;
+}
+
+.liquid-glass-settings .setting-row {
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.08)),
+        var(--glass-panel-bg-strong) !important;
+    border: 1px solid var(--glass-edge-soft);
+    border-radius: 14px;
+    box-shadow: var(--glass-rim-shadow);
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur-light, 10px));
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur-light, 10px));
+}
+
+.liquid-glass-settings .setting-row:hover {
+    border-color: var(--glass-edge);
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.12)),
+        var(--glass-panel-bg-strong) !important;
+}
+
+.liquid-glass-settings label,
+.liquid-glass-settings .setting-row>label:not(.switch) {
+    color: var(--glass-text, var(--text-primary, #17324a)) !important;
+}
+
+.liquid-glass-settings select {
+    min-width: 150px;
+    background: color-mix(in srgb, var(--glass-panel-bg-strong) 72%, var(--bg-input, #fff)) !important;
+    color: var(--glass-text, var(--text-primary, #17324a)) !important;
+    border: 1px solid var(--glass-edge-soft);
+    border-radius: 10px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+.liquid-glass-settings .slider {
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.06)),
+        var(--glass-panel-bg-strong) !important;
+    border: 1px solid var(--glass-edge-soft);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52), inset 0 -1px 0 rgba(255, 255, 255, 0.12), 0 5px 14px rgba(6, 12, 24, 0.12);
+}
+
+.liquid-glass-settings .slider::before {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), var(--accent, #88c9ea));
+    box-shadow: 0 3px 8px rgba(6, 12, 24, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.liquid-glass-settings .switch input:checked+.slider {
+    background:
+        linear-gradient(145deg, color-mix(in srgb, var(--accent, #88c9ea) 42%, rgba(255, 255, 255, 0.24)), rgba(255, 255, 255, 0.08)),
+        var(--glass-panel-bg-strong) !important;
+    border-color: color-mix(in srgb, var(--accent, #88c9ea) 68%, var(--glass-edge, #fff));
+}
+
+.liquid-glass-settings .switch input:focus-visible+.slider,
+.liquid-glass-settings select:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent, #88c9ea) 72%, white);
+    outline-offset: 2px;
 }
 
 /* Setting Controls */
@@ -8011,6 +8187,206 @@ body.split-active .editor-pane {
 
 .gutter:hover {
     background-color: var(--accent, #88c9ea);
+}
+
+/* ===== FINAL PERFORMANCE + IO OVERRIDES ===== */
+body.glass-performance {
+    --glass-saturation: 1.08;
+    --glass-blur: 4px;
+    --glass-blur-light: 3px;
+    --glass-highlight-opacity: 0.18;
+    --glass-rim-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 3px 10px rgba(6, 12, 24, 0.10);
+}
+
+body.performance-mode *,
+body.glass-performance * {
+    scroll-behavior: auto !important;
+}
+
+body.performance-mode .liquidglass::before,
+body.performance-mode .header-bar::before,
+body.performance-mode .status-bar::before,
+body.performance-mode .explorer-sidebar::before,
+body.performance-mode .terminal-section::before,
+body.performance-mode .editor-section::before,
+body.performance-mode .problems-panel::before,
+body.performance-mode .io-section.three-card-io .card-panel::before,
+body.performance-mode .welcome-box::before,
+body.performance-mode .settings-popup::before,
+body.performance-mode .note-dialog::before,
+body.performance-mode .dropdown::before {
+    opacity: 0.16;
+}
+
+body.performance-mode .io-section.three-card-io .card-panel:hover,
+body.performance-mode .io-section.three-card-io .card-panel:focus-within,
+body.performance-mode .action-btn:hover,
+body.performance-mode .toggle-btn:hover,
+body.performance-mode .tab:hover {
+    transform: none !important;
+}
+
+body.performance-mode .liquid-glass-settings .setting-row,
+body.performance-mode .liquidglass,
+body.performance-mode .header-bar,
+body.performance-mode .status-bar,
+body.performance-mode .panel-head,
+body.performance-mode .terminal-section,
+body.performance-mode .problems-panel,
+body.performance-mode .editor-section,
+body.performance-mode .dropdown,
+body.performance-mode .update-popup,
+body.performance-mode .cc-popup,
+body.performance-mode .color-picker-popup,
+body.performance-mode .fullscreen-popup,
+body.performance-mode .local-history-modal,
+body.performance-mode .snippet-editor-popup,
+body.performance-mode .io-section.three-card-io .card-panel,
+body.performance-mode .welcome-box,
+body.performance-mode .note-dialog,
+body.performance-mode .settings-popup,
+body.performance-mode .tc6-container,
+body.performance-mode .explorer-sidebar,
+body.performance-mode .explorer-header,
+body.performance-mode .context-menu,
+body.performance-mode .dialog-overlay .dialog {
+    -webkit-backdrop-filter: saturate(var(--glass-saturation, 1.08)) blur(var(--glass-blur, 4px)) !important;
+    backdrop-filter: saturate(var(--glass-saturation, 1.08)) blur(var(--glass-blur, 4px)) !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 10px clamp(210px, 24vw, 420px) !important;
+    grid-template-rows: minmax(0, 1fr) clamp(128px, 19vh, 184px) !important;
+    grid-template-areas:
+        "editor terminal-resizer terminal"
+        "io io terminal" !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+    flex-direction: initial !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .editor-section {
+    grid-area: editor !important;
+    width: auto !important;
+    min-width: 0 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) #resizer-io {
+    display: none !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) #resizer-term {
+    grid-area: terminal-resizer !important;
+    display: block !important;
+    width: 10px !important;
+    height: auto !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .terminal-section {
+    grid-area: terminal !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io {
+    grid-area: io !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    gap: 8px !important;
+    padding: 0 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .card-panel {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    border-radius: 12px !important;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.08)),
+        var(--glass-panel-bg-strong) !important;
+    color: var(--glass-text, var(--text-primary, #17324a)) !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-head {
+    min-height: 28px !important;
+    padding: 5px 8px !important;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.08)),
+        color-mix(in srgb, var(--glass-panel-bg-strong) 78%, transparent) !important;
+    color: var(--glass-text, var(--text-primary, #17324a)) !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-title,
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-title.expected {
+    color: var(--glass-text, var(--text-primary, #17324a)) !important;
+    font-size: 10px !important;
+    letter-spacing: 0 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-title i,
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .test-nav-btn {
+    color: color-mix(in srgb, var(--accent, #88c9ea) 58%, var(--glass-text, #17324a)) !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-textarea,
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .diff-display {
+    color: var(--glass-text, var(--text-primary, #17324a)) !important;
+    caret-color: var(--accent, #88c9ea) !important;
+    min-height: 0 !important;
+    padding: 8px 10px !important;
+    font-size: var(--panel-font-size, 13px) !important;
+    line-height: 1.45 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .panel-textarea::placeholder {
+    color: color-mix(in srgb, var(--glass-text-muted, #375e7a) 72%, transparent) !important;
+    opacity: 1 !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)):has(.terminal-section.panel-hidden) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) clamp(128px, 19vh, 184px) !important;
+    grid-template-areas:
+        "editor"
+        "io" !important;
+}
+
+.main:has(.io-section.three-card-io:not(.panel-hidden)):has(.terminal-section.panel-hidden) #resizer-term,
+.main:has(.io-section.three-card-io:not(.panel-hidden)):has(.terminal-section.panel-hidden) .terminal-section {
+    display: none !important;
+}
+
+@media (max-width: 840px) {
+    .main:has(.io-section.three-card-io:not(.panel-hidden)) {
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-rows: minmax(0, 1fr) clamp(132px, 24vh, 190px) clamp(130px, 28vh, 230px) !important;
+        grid-template-areas:
+            "editor"
+            "io"
+            "terminal" !important;
+    }
+
+    .main:has(.io-section.three-card-io:not(.panel-hidden)) #resizer-term {
+        display: none !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io {
+        grid-template-columns: repeat(3, minmax(120px, 1fr)) !important;
+        grid-template-rows: minmax(0, 1fr) !important;
+        overflow-x: auto !important;
+    }
 }
 
 /* ===== GLOBAL RESPONSIVE TUNING ===== */
