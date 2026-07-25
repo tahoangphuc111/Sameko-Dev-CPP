@@ -251,14 +251,16 @@ body.customizer-open::before {
 }
 
 /* ===== HEADER ===== */
+/* ===== HEADER - LIQUID GLASS (iOS 27 STYLE) ===== */
 .header-bar {
     display: flex;
     align-items: center;
     height: var(--header-height);
-    background: var(--bg-header-main, var(--bg-header, var(--bg-glass-heavy)));
-    backdrop-filter: var(--blur-filter-light);
-    /* Apply blur only here */
-    border-bottom: 2px solid var(--border-strong, white);
+    background: rgba(248, 252, 255, 0.72) !important;
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.65) !important;
+    box-shadow: 0 4px 20px rgba(0, 20, 40, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.85);
     padding: 0 16px;
     gap: 16px;
     -webkit-app-region: drag;
@@ -874,20 +876,23 @@ body.is-mac .header-bar,
 .io-section.three-card-io .card-panel {
     flex: 1;
     min-width: 0;
-    background: var(--bg-panel, #ffffff);
-    border: 1.5px solid var(--border, #e0f0ff);
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.68) !important;
+    backdrop-filter: blur(22px) saturate(195%);
+    -webkit-backdrop-filter: blur(22px) saturate(195%);
+    border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+    border-radius: 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 10px 30px rgba(0, 30, 60, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .io-section.three-card-io .card-panel:focus-within,
 .io-section.three-card-io .card-panel:hover {
-    border-color: var(--accent, #4fc3f7);
-    box-shadow: 0 6px 16px rgba(79, 195, 247, 0.12);
+    border-color: rgba(79, 195, 247, 0.85) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(79, 195, 247, 0.22), inset 0 1px 2px rgba(255, 255, 255, 1);
 }
 
 .io-section.three-card-io .panel-head {
@@ -2051,14 +2056,18 @@ input[type="color"] {
 }
 
 /* ===== STATUS BAR ===== */
+/* ===== STATUS BAR - LIQUID GLASS (iOS 27 STYLE) ===== */
 .status-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     height: var(--statusbar-height);
     padding: 0 16px;
-    background: var(--bg-header-statusbar);
-    border-top: 2px solid var(--border, #e0f0ff);
+    background: rgba(248, 252, 255, 0.72) !important;
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.65) !important;
+    box-shadow: 0 -4px 20px rgba(0, 20, 40, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.85);
     font-size: 12px;
     color: var(--text-secondary);
 }
