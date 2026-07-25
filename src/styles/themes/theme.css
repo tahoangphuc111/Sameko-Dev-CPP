@@ -682,6 +682,30 @@ body.is-mac .header-bar,
     padding-left: 92px;
 }
 
+.update-btn-bottom {
+    background: rgba(3, 169, 244, 0.15);
+    color: var(--text-primary, #2a5a75);
+    border: 1px solid rgba(3, 169, 244, 0.3);
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    outline: none;
+    font-family: inherit;
+}
+
+.update-btn-bottom:hover {
+    background: rgba(3, 169, 244, 0.3);
+    border-color: rgba(3, 169, 244, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(3, 169, 244, 0.25);
+}
+
 .win-btns {
     display: flex;
     -webkit-app-region: no-drag;

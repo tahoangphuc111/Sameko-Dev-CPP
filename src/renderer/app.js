@@ -7933,6 +7933,21 @@ async function autoCheckGitHubUpdate() {
 // Auto check GitHub releases 3s after startup
 setTimeout(autoCheckGitHubUpdate, 3000);
 
+document.addEventListener('DOMContentLoaded', () => {
+    const statusUpdateBtn = document.getElementById('status-update-btn');
+    if (statusUpdateBtn) {
+        statusUpdateBtn.onclick = () => {
+            if (updateDownloaded && window.electronAPI?.quitAndInstall) {
+                window.electronAPI.quitAndInstall();
+            } else if (window.electronAPI?.openReleasePage) {
+                window.electronAPI.openReleasePage('https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases');
+            } else {
+                window.open('https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases', '_blank');
+            }
+        };
+    }
+});
+
 // ============================================================================
 // TAB CONTEXT MENU
 // ============================================================================
