@@ -7676,6 +7676,7 @@ function handleUpdateStatus(data) {
             console.log('[Update] Update available:', updateData?.version);
             updateDownloaded = false;
             pendingUpdateVersion = updateData?.version;
+            showCornerUpdateBadge(updateData?.version);
 
             // Update version info
             const upCur = document.getElementById('update-current');
@@ -7691,23 +7692,14 @@ function handleUpdateStatus(data) {
             }
 
             if (isPortableVersion) {
-                // Portable: Show header button that links to download page
                 if (headerRestartBtn) {
                     headerRestartBtn.style.display = 'flex';
                     headerRestartBtn.querySelector('span').textContent = 'Download v' + updateData?.version;
                 }
-                // Don't show overlay for portable - just header notification
                 if (overlay) overlay.style.display = 'none';
             } else {
-                // Installer: Auto-download handled by electron-updater (autoDownload = true)
                 console.log('[Update] Update will be auto-downloaded in background...');
-                // Don't show overlay - silent download
                 if (overlay) overlay.style.display = 'none';
-                
-                // Hide header restart button during check/download
-                if (headerRestartBtn) {
-                    headerRestartBtn.style.display = 'none';
-                }
             }
 
             if (progress) progress.style.display = 'none';
@@ -7841,6 +7833,80 @@ function restartToUpdate() {
 
     window.electronAPI.quitAndInstall();
 }
+
+function showCornerUpdateBadge(version, releaseUrl) {
+    // 1. Status Bar Corner Badge (Bottom Right)
+    const statusBarRight = document.querySelector('.status-bar .status-right');
+    let statusBadge = document.getElementById('status-update-badge');
+
+    if (statusBarRight && !statusBadge) {
+        statusBadge = document.createElement('span');
+        statusBadge.id = 'status-update-badge';
+        statusBadge.className = 'status-item update-badge-corner';
+        statusBadge.innerHTML = `<i class="fa-solid fa-rocket" style="color:#ffd54f;"></i> Update v${version || '1.2.1'}`;
+        statusBadge.title = `Click to update Sameko Dev C++ to v${version || '1.2.1'}`;
+        statusBadge.style.cssText = 'background: linear-gradient(135deg, #2e7d32, #1b5e20); color: #ffffff; font-weight: 700; padding: 2px 10px; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(46,125,50,0.4); margin-left: 8px; font-size: 11px; font-family: inherit;';
+
+        statusBadge.onclick = () => {
+            if (updateDownloaded && window.electronAPI?.quitAndInstall) {
+                window.electronAPI.quitAndInstall();
+            } else if (window.electronAPI?.openReleasePage) {
+                window.electronAPI.openReleasePage(releaseUrl || 'https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases');
+            } else {
+                window.open(releaseUrl || 'https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases', '_blank');
+            }
+        };
+
+        statusBarRight.appendChild(statusBadge);
+    }
+
+    // 2. Header Top Right Update Button
+    const headerRestartBtn = document.getElementById('btn-restart-update');
+    if (headerRestartBtn) {
+        headerRestartBtn.style.display = 'inline-flex';
+        const span = headerRestartBtn.querySelector('span');
+        if (span) span.textContent = updateDownloaded ? 'Restart to Update' : `🚀 Update v${version || '1.2.1'}`;
+        headerRestartBtn.onclick = () => {
+            if (updateDownloaded && window.electronAPI?.quitAndInstall) {
+                window.electronAPI.quitAndInstall();
+            } else {
+                window.electronAPI?.openReleasePage?.(releaseUrl || 'https://github.com/tahoangphuc111/Sameko-Dev-CPP/releases');
+            }
+        };
+    }
+}
+
+function isNewerVersion(latest, current) {
+    const lParts = latest.replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
+    const cParts = current.replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
+    for (let i = 0; i < Math.max(lParts.length, cParts.length); i++) {
+        const l = lParts[i] || 0;
+        const c = cParts[i] || 0;
+        if (l > c) return true;
+        if (l < c) return false;
+    }
+    return false;
+}
+
+async function autoCheckGitHubUpdate() {
+    try {
+        const currentVer = '1.2.0';
+        const response = await fetch('https://api.github.com/repos/tahoangphuc111/Sameko-Dev-CPP/releases/latest');
+        if (!response.ok) return;
+        const data = await response.json();
+
+        const latestTag = (data.tag_name || '').replace(/^v/, '');
+        if (latestTag && isNewerVersion(latestTag, currentVer)) {
+            console.log(`[Update] New release found on GitHub: v${latestTag} (current: v${currentVer})`);
+            showCornerUpdateBadge(latestTag, data.html_url);
+        }
+    } catch (e) {
+        console.log('[Update] Release check info:', e.message);
+    }
+}
+
+// Auto check GitHub releases 3s after startup
+setTimeout(autoCheckGitHubUpdate, 3000);
 
 // ============================================================================
 // TAB CONTEXT MENU
