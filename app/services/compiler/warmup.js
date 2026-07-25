@@ -25,8 +25,10 @@ function performCompilerWarmup(delay = 1000) {
 
         console.log('[System] Warming up compiler and linker binaries...');
 
-        // Warm up Compiler - compile a minimal program to NUL
-        const child = spawn(compiler, ['-x', 'c++', '-', '-o', 'NUL', '-pipe', '-s', '-O0'], {
+        const nullDevice = process.platform === 'win32' ? 'NUL' : '/dev/null';
+
+        // Warm up Compiler - compile a minimal program to nullDevice
+        const child = spawn(compiler, ['-x', 'c++', '-', '-o', nullDevice, '-pipe', '-s', '-O0'], {
             stdio: ['pipe', 'ignore', 'ignore'],
             windowsHide: true,
             env: env
@@ -44,14 +46,17 @@ function performCompilerWarmup(delay = 1000) {
         // Warm up LLD Linker (if available)
         if (compilerInfo.hasLLD && path.isAbsolute(compiler)) {
             const binDir = path.dirname(compiler);
-            const lldPath = path.join(binDir, 'ld.lld.exe');
-            const lldWarmup = spawn(lldPath, ['--version'], {
-                windowsHide: true,
-                stdio: 'ignore'
-            });
-            lldWarmup.on('error', () => {
-                // Silently ignore LLD warmup errors
-            });
+            const lldExe = process.platform === 'win32' ? 'ld.lld.exe' : 'ld.lld';
+            const lldPath = path.join(binDir, lldExe);
+            if (require('fs').existsSync(lldPath)) {
+                const lldWarmup = spawn(lldPath, ['--version'], {
+                    windowsHide: true,
+                    stdio: 'ignore'
+                });
+                lldWarmup.on('error', () => {
+                    // Silently ignore LLD warmup errors
+                });
+            }
         }
 
         console.log('[System] Compiler warmup initiated');

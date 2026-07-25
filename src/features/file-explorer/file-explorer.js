@@ -400,7 +400,76 @@ const FileExplorer = {
             });
         }
 
-        // Refresh handled automatically — no separate button needed
+        // Toolbar: New File
+        const btnNewFile = document.getElementById('btn-new-file-toolbar');
+        if (btnNewFile) {
+            btnNewFile.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!this.currentFolder) {
+                    alert('Please open a folder first.');
+                    return;
+                }
+                this.showInputDialog('New File in ' + (this.currentFolder.split(/[/\\]/).pop() || 'Root'), 'main.cpp', (fileName) => {
+                    if (!fileName || !fileName.trim()) return;
+                    const filePath = `${this.currentFolder}/${fileName.trim()}`.replace(/\\/g, '/');
+                    let template = '';
+                    if (/\.(cpp|c|cc|cxx)$/i.test(fileName)) {
+                        const baseName = fileName.replace(/\.[^.]+$/, '');
+                        template = `#include <iostream>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${baseName}\n\n    return 0;\n}\n`;
+                    }
+                    if (window.electronAPI && window.electronAPI.saveFile) {
+                        window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
+                            this.refreshTree();
+                            this.openFile(filePath);
+                        });
+                    }
+                });
+            });
+        }
+
+        // Toolbar: New Folder
+        const btnNewFolder = document.getElementById('btn-new-folder-toolbar');
+        if (btnNewFolder) {
+            btnNewFolder.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!this.currentFolder) {
+                    alert('Please open a folder first.');
+                    return;
+                }
+                this.showInputDialog('New Subfolder in ' + (this.currentFolder.split(/[/\\]/).pop() || 'Root'), '', async (name) => {
+                    if (!name || !name.trim()) return;
+                    const newPath = `${this.currentFolder}/${name.trim()}`.replace(/\\/g, '/');
+                    if (window.electronAPI && window.electronAPI.createDirectory) {
+                        await window.electronAPI.createDirectory(newPath);
+                        this.refreshTree();
+                    }
+                });
+            });
+        }
+
+        // Toolbar: Refresh
+        const btnRefresh = document.getElementById('btn-refresh-explorer-toolbar');
+        if (btnRefresh) {
+            btnRefresh.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.refreshTree();
+            });
+        }
+
+        // Toolbar: Collapse All
+        const btnCollapse = document.getElementById('btn-collapse-explorer-toolbar');
+        if (btnCollapse) {
+            btnCollapse.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.expandedFolders.clear();
+                this.renderTree();
+                this.saveState();
+            });
+        }
 
         // Keyboard shortcuts when explorer is open and a file is selected
         document.addEventListener('keydown', (e) => {
@@ -1782,7 +1851,10 @@ const FileExplorer = {
             <div class="context-item" data-action="rename">
                 Rename
             </div>
-            <div class="context-item" data-action="delete">
+            <div class="context-item" data-action="duplicate">
+                Duplicate
+            </div>
+            <div class="context-item danger" data-action="delete">
                 Delete
             </div>
             <div class="context-separator"></div>
@@ -2016,6 +2088,8 @@ const FileExplorer = {
         const menu = document.createElement('div');
         menu.className = 'explorer-context-menu';
 
+        const hasClipboard = !!this.clipboardFile;
+
         menu.innerHTML = `
             <div class="context-item" data-action="new-file">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
@@ -2024,6 +2098,20 @@ const FileExplorer = {
             <div class="context-item" data-action="new-subfolder">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
                 New Subfolder
+            </div>
+            ${hasClipboard ? `
+            <div class="context-item" data-action="paste">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                Paste
+            </div>` : ''}
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="rename">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Rename Folder
+            </div>
+            <div class="context-item danger" data-action="delete">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                Delete Folder
             </div>
             <div class="context-separator"></div>
             <div class="context-item" data-action="open-in-explorer">
@@ -2077,6 +2165,25 @@ const FileExplorer = {
                     await this.refreshTree();
                 }
             });
+        };
+
+        const pasteBtn = menu.querySelector('[data-action="paste"]');
+        if (pasteBtn) {
+            pasteBtn.onclick = () => {
+                menu.remove();
+                this.pasteFileIntoFolder(folderPath);
+            };
+        }
+
+        menu.querySelector('[data-action="rename"]').onclick = () => {
+            menu.remove();
+            const itemEl = this.elements.tree.querySelector(`.explorer-item[data-path="${CSS.escape(folderPath)}"]`);
+            this.startInlineRename(folderPath, itemEl);
+        };
+
+        menu.querySelector('[data-action="delete"]').onclick = () => {
+            menu.remove();
+            this.deleteFolder(folderPath);
         };
 
         menu.querySelector('[data-action="open-in-explorer"]').onclick = () => {
@@ -2310,6 +2417,138 @@ const FileExplorer = {
     },
 
     /**
+     * Inline rename file/folder directly inside the tree node
+     */
+    startInlineRename(targetPath, itemElement) {
+        if (!targetPath) return;
+        let nameSpan = itemElement ? (itemElement.querySelector('.item-name') || itemElement.querySelector('.name')) : null;
+        if (!nameSpan) {
+            return this.promptRename(targetPath);
+        }
+        const currentName = targetPath.split(/[/\\]/).pop();
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'tree-inline-input';
+        input.value = currentName;
+
+        input.onclick = (e) => e.stopPropagation();
+        input.ondblclick = (e) => e.stopPropagation();
+
+        const originalText = nameSpan.textContent;
+        nameSpan.textContent = '';
+        nameSpan.appendChild(input);
+        input.focus();
+
+        const isFolder = itemElement ? itemElement.classList.contains('folder') : false;
+        const dotIdx = currentName.lastIndexOf('.');
+        if (dotIdx > 0 && !isFolder) {
+            input.setSelectionRange(0, dotIdx);
+        } else {
+            input.select();
+        }
+
+        let finished = false;
+        const finish = async (accept) => {
+            if (finished) return;
+            finished = true;
+            const newName = input.value.trim();
+            if (accept && newName && newName !== currentName) {
+                await this.renameFile(targetPath, newName);
+            } else {
+                nameSpan.textContent = originalText;
+            }
+        };
+
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                finish(true);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                finish(false);
+            }
+        };
+
+        input.onblur = () => {
+            finish(true);
+        };
+    },
+
+    /**
+     * Delete folder recursively
+     */
+    async deleteFolder(folderPath) {
+        const folderName = folderPath.split(/[/\\]/).pop();
+        if (confirm(`Delete folder "${folderName}" and all its contents?`)) {
+            try {
+                if (window.electronAPI && window.electronAPI.deleteFolder) {
+                    await window.electronAPI.deleteFolder(folderPath);
+                    this.refreshTree();
+                } else {
+                    console.error('[FileExplorer] deleteFolder API not available');
+                }
+            } catch (err) {
+                console.error('[FileExplorer] Delete folder failed:', err);
+                alert('Failed to delete folder: ' + err.message);
+            }
+        }
+    },
+
+    /**
+     * Duplicate file
+     */
+    async duplicateFile(filePath) {
+        const dir = filePath.substring(0, filePath.lastIndexOf('/'));
+        const fileName = filePath.split(/[/\\]/).pop();
+        const dotIdx = fileName.lastIndexOf('.');
+        let baseName = fileName;
+        let ext = '';
+        if (dotIdx > 0) {
+            baseName = fileName.substring(0, dotIdx);
+            ext = fileName.substring(dotIdx);
+        }
+        const newPath = `${dir}/${baseName}_copy${ext}`;
+        try {
+            if (window.electronAPI && window.electronAPI.copyFile) {
+                await window.electronAPI.copyFile(filePath, newPath);
+                this.refreshTree();
+            }
+        } catch (err) {
+            console.error('[FileExplorer] Duplicate file failed:', err);
+            alert('Failed to duplicate file: ' + err.message);
+        }
+    },
+
+    /**
+     * Paste file into specific folder
+     */
+    async pasteFileIntoFolder(targetFolder) {
+        if (!this.clipboardFile || !targetFolder) return;
+        const { path: srcPath, mode } = this.clipboardFile;
+        const fileName = srcPath.split(/[/\\]/).pop();
+        const destPath = `${targetFolder}/${fileName}`.replace(/\\/g, '/');
+
+        if (srcPath.replace(/\\/g, '/') === destPath) return;
+
+        try {
+            if (mode === 'cut') {
+                if (window.electronAPI && window.electronAPI.moveFile) {
+                    await window.electronAPI.moveFile(srcPath, destPath);
+                }
+                this.clipboardFile = null;
+            } else {
+                if (window.electronAPI && window.electronAPI.copyFile) {
+                    await window.electronAPI.copyFile(srcPath, destPath);
+                }
+            }
+            this.refreshTree();
+        } catch (err) {
+            console.error('[FileExplorer] Paste failed:', err);
+            alert('Paste failed: ' + err.message);
+        }
+    },
+
+    /**
      * Open containing folder in system explorer
      */
     async openContainingFolder(filePath) {
@@ -2391,9 +2630,9 @@ const FileExplorer = {
         // Check if file belongs to any contest category and auto-activate it
         if (this.categories && this.categories.length > 0) {
             const normalizedPath = filePath.replace(/\\/g, '/');
-            const matchingCat = this.categories.find(c => 
-                c.type === 'contest' && 
-                c.folderPath && 
+            const matchingCat = this.categories.find(c =>
+                c.type === 'contest' &&
+                c.folderPath &&
                 normalizedPath.startsWith(c.folderPath.replace(/\\/g, '/') + '/')
             );
             if (matchingCat) {
@@ -4208,11 +4447,11 @@ const FileExplorer = {
                 const normalFolderPathA = a.folderPath ? a.folderPath.replace(/\\/g, '/') : '';
                 const normalFolderPathB = b.folderPath ? b.folderPath.replace(/\\/g, '/') : '';
                 const normalContestFolder = this.contestFolder ? this.contestFolder.replace(/\\/g, '/') : '';
-                const isActiveA = this.activeContestId 
-                    ? (this.activeContestId === a.id) 
+                const isActiveA = this.activeContestId
+                    ? (this.activeContestId === a.id)
                     : (normalFolderPathA && normalContestFolder === normalFolderPathA);
-                const isActiveB = this.activeContestId 
-                    ? (this.activeContestId === b.id) 
+                const isActiveB = this.activeContestId
+                    ? (this.activeContestId === b.id)
                     : (normalFolderPathB && normalContestFolder === normalFolderPathB);
 
                 if (isActiveA && !isActiveB) return -1;
@@ -4261,8 +4500,8 @@ const FileExplorer = {
             // Determine if active
             const normalFolderPath = cat.folderPath ? cat.folderPath.replace(/\\/g, '/') : '';
             const normalContestFolder = this.contestFolder ? this.contestFolder.replace(/\\/g, '/') : '';
-            const isActive = this.activeContestId 
-                ? (this.activeContestId === cat.id) 
+            const isActive = this.activeContestId
+                ? (this.activeContestId === cat.id)
                 : (normalFolderPath && normalContestFolder === normalFolderPath);
 
             const isSpecialContest = isActive && !isCompleted;
@@ -4318,7 +4557,7 @@ const FileExplorer = {
                 // Problem items
                 if (itemCount > 0) {
                     const sortedItems = [...cat.items].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-                    
+
                     if (isSpecialContest) {
                         // Render horizontal grid of squares
                         html += '<div class="cp-problems-grid">';

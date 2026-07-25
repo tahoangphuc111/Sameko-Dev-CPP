@@ -145,22 +145,27 @@ function saveSnippet() {
     closeSnippetEditor();
 }
 
-// Setup listeners
-document.addEventListener('DOMContentLoaded', () => {
+function initSnippetEvents() {
     const closeBtn = document.getElementById('btn-close-snippet-editor');
     const cancelBtn = document.getElementById('btn-cancel-snippet');
     const saveBtn = document.getElementById('btn-save-snippet');
     const overlay = document.querySelector('.snippet-editor-overlay');
     const addBtn = document.getElementById('btn-add-snippet');
 
-    if (closeBtn) closeBtn.addEventListener('click', closeSnippetEditor);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeSnippetEditor);
-    if (saveBtn) saveBtn.addEventListener('click', saveSnippet);
-    if (overlay) overlay.addEventListener('click', closeSnippetEditor);
-    if (addBtn) addBtn.addEventListener('click', addNewSnippet);
+    if (closeBtn) closeBtn.onclick = closeSnippetEditor;
+    if (cancelBtn) cancelBtn.onclick = closeSnippetEditor;
+    if (saveBtn) saveBtn.onclick = saveSnippet;
+    if (overlay) overlay.onclick = closeSnippetEditor;
+    if (addBtn) addBtn.onclick = addNewSnippet;
 
     // Initial render if App is already loaded
     if (typeof App !== 'undefined' && App.settings) {
         renderSnippetsList();
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSnippetEvents);
+} else {
+    initSnippetEvents();
+}

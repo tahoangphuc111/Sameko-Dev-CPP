@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>C++ IDE</title>
+    <!-- Font Awesome 6 Free Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Local bundled fonts (offline, no CDN round-trip on startup) -->
     <link rel="stylesheet" href="assets/fonts.css">
     <link rel="stylesheet" href="styles/base.css">
@@ -1159,13 +1161,20 @@
                 <div class="explorer-header">
                     <span class="explorer-title">EXPLORER</span>
                     <div class="explorer-actions">
+                        <button class="explorer-action-btn" id="btn-new-file-toolbar" title="New File">
+                            <i class="fa-solid fa-file-circle-plus"></i>
+                        </button>
+                        <button class="explorer-action-btn" id="btn-new-folder-toolbar" title="New Folder">
+                            <i class="fa-solid fa-folder-plus"></i>
+                        </button>
+                        <button class="explorer-action-btn" id="btn-refresh-explorer-toolbar" title="Refresh">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button class="explorer-action-btn" id="btn-collapse-explorer-toolbar" title="Collapse All">
+                            <i class="fa-solid fa-compress"></i>
+                        </button>
                         <button class="explorer-action-btn" id="btn-open-folder" title="Open Folder">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                                <line x1="12" y1="11" x2="12" y2="17" />
-                                <line x1="9" y1="14" x2="15" y2="14" />
-                            </svg>
+                            <i class="fa-solid fa-folder-open"></i>
                         </button>
                     </div>
                 </div>
@@ -1194,6 +1203,10 @@
                                     <path d="M3 7h4l2 2h8a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                                 </svg>
                                 Open File
+                            </button>
+                            <button class="welcome-btn primary-folder-card" id="welcome-open-folder" title="Open Workspace Folder">
+                                <i class="fa-solid fa-folder-open" style="font-size: 16px; margin-right: 6px;"></i>
+                                Open Folder
                             </button>
                         </div>
                     </div>

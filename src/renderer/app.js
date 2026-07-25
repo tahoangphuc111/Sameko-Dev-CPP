@@ -118,8 +118,17 @@ int main() {
         copyLineUp: 'Shift+Alt+Up',
         copyLineDown: 'Shift+Alt+Down'
     },
-    snippets: [
-        { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', isBuiltin: true },
+    snippets: (typeof getAllSnippets === 'function') ? getAllSnippets() : [
+        { trigger: 'cp', name: 'CP Template', content: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \${1:// code}\n    return 0;\n}', isBuiltin: true },
+        { trigger: 'main', name: 'Main Function', content: 'int main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \${1:// code}\n    return 0;\n}', isBuiltin: true },
+        { trigger: 'fastio', name: 'Fast I/O', content: 'ios_base::sync_with_stdio(false);\ncin.tie(NULL);', isBuiltin: true },
+        { trigger: 'fori', name: 'For Loop', content: 'for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n    ${3:// body}\n}', isBuiltin: true },
+        { trigger: 'fore', name: 'Range-based For', content: 'for (auto& ${1:x} : ${2:v}) {\n    ${3:// body}\n}', isBuiltin: true },
+        { trigger: 'vector', name: 'STL Vector', content: 'vector<${1:int}> ${2:v};', isBuiltin: true },
+        { trigger: 'map', name: 'STL Map', content: 'map<${1:int}, ${2:int}> ${3:m};', isBuiltin: true },
+        { trigger: 'set', name: 'STL Set', content: 'set<${1:int}> ${2:s};', isBuiltin: true },
+        { trigger: 'pq', name: 'Priority Queue', content: 'priority_queue<${1:int}> ${2:pq};', isBuiltin: true },
+        { trigger: 'pbds', name: 'PBDS (Ordered Set)', content: '#include <ext/pb_ds/assoc_container.hpp>\n#include <ext/pb_ds/tree_policy.hpp>\nusing namespace __gnu_pbds;\ntemplate <typename T>\nusing ordered_set = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;', isBuiltin: true }
     ],
     discord: {
         enabled: true
@@ -3627,6 +3636,10 @@ function initHeader() {
 
     document.getElementById('welcome-new').onclick = newFile;
     document.getElementById('welcome-open').onclick = openFile;
+    const welcomeFolderBtn = document.getElementById('welcome-open-folder');
+    if (welcomeFolderBtn) {
+        welcomeFolderBtn.onclick = () => window.FileExplorer?.openFolderDialog?.();
+    }
 
     document.getElementById('btn-close').onclick = () => window.electronAPI?.closeWindow?.();
     document.getElementById('btn-min').onclick = () => window.electronAPI?.minimizeWindow?.();
@@ -5879,16 +5892,20 @@ if (window.electronAPI) {
         }
 
 
-        // --- Exit: 0 ---
-        // Time: 757ms | Memory: 2.4MB
-        log(`\n--- Exit: ${code} ---`, code === 0 ? 'success' : 'warning');
+        const statusIcon = code === 0 ? '🟢' : '🔴';
+        const exitText = code === 0 ? 'Exit 0' : `Exit ${code}`;
 
+        // Print Execution Performance HUD in Output Console
+        log(`\n================================================`, 'info');
+        log(`⏱️ Time: ${timeStr || 'N/A'}  |  💾 Peak RAM: ${memStr || 'N/A'}  |  ${statusIcon} Code: ${code}`, code === 0 ? 'success' : 'warning');
+        log(`================================================`, 'info');
 
-        if (timeStr || memStr) {
-            const parts = [];
-            if (timeStr) parts.push('Time: ' + timeStr);
-            if (memStr) parts.push('Memory: ' + memStr);
-            log(parts.join(' | '), 'info');
+        // Update Status Bar Performance HUD element
+        const perfHudEl = document.getElementById('perf-hud');
+        if (perfHudEl) {
+            perfHudEl.innerHTML = `⏱️ ${timeStr || 'N/A'} &nbsp;|&nbsp; 💾 ${memStr || 'N/A'} &nbsp;|&nbsp; ${statusIcon} ${exitText}`;
+            perfHudEl.className = `status-item perf-hud-item ${code === 0 ? 'success' : 'error'}`;
+            perfHudEl.classList.remove('hidden');
         }
 
         setRunning(false);
@@ -5899,9 +5916,9 @@ if (window.electronAPI) {
         }
 
         const statusParts = [];
-        if (timeStr) statusParts.push(timeStr);
-        if (memStr) statusParts.push(memStr);
-        setStatus(code === 0 ? (statusParts.join(' | ') || 'Done') : `Exit: ${code}`, code === 0 ? 'success' : '');
+        if (timeStr) statusParts.push('⏱️ ' + timeStr);
+        if (memStr) statusParts.push('💾 ' + memStr);
+        setStatus(code === 0 ? (statusParts.join(' | ') || 'Done') : `Exit: ${code}`, code === 0 ? 'success' : 'error');
         if (code === 0) setTimeout(compareOutput, 100);
 
         // Notify explorer: run finished

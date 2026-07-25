@@ -171,14 +171,15 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     const dir = path.dirname(actualFilePath);
     const baseName = path.basename(actualFilePath, path.extname(actualFilePath));
 
-    // Use system temp directory for .exe output
+    // Use system temp directory for build output
     const buildsDir = path.join(app.getPath('temp'), 'cpp-ide-builds');
     if (!fs.existsSync(buildsDir)) {
         fs.mkdirSync(buildsDir, { recursive: true });
     }
     cleanupOldBuildArtifacts(buildsDir);
 
-    const outputPath = path.join(buildsDir, baseName + '.exe');
+    const exeExt = process.platform === 'win32' ? '.exe' : '';
+    const outputPath = path.join(buildsDir, baseName + exeExt);
 
     // ===== MULTI-FILE PROJECT SUPPORT (fast lookup) =====
     let sourceFiles = [actualFilePath];
@@ -333,6 +334,9 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
                     linkedFiles: linkedFiles
                 });
             } else {
+                if (process.platform !== 'win32' && fs.existsSync(outputPath)) {
+                    try { fs.chmodSync(outputPath, 0o755); } catch (_) { }
+                }
                 resolve({
                     success: true,
                     message: 'Compilation successful!',

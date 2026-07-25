@@ -42,18 +42,19 @@ function getResourcesPath() {
 function getBundledCompilerPaths() {
     const paths = [];
     const portableDir = getPortableDir();
+    const exeName = process.platform === 'win32' ? 'g++.exe' : 'g++';
 
     if (app.isPackaged) {
-        paths.push(path.join(process.resourcesPath, 'Sameko-GCC', 'bin', 'g++.exe'));
+        paths.push(path.join(process.resourcesPath, 'Sameko-GCC', 'bin', exeName));
     }
 
     if (portableDir) {
-        paths.push(path.join(portableDir, 'Sameko-GCC', 'bin', 'g++.exe'));
-        paths.push(path.join(portableDir, 'resources', 'Sameko-GCC', 'bin', 'g++.exe'));
+        paths.push(path.join(portableDir, 'Sameko-GCC', 'bin', exeName));
+        paths.push(path.join(portableDir, 'resources', 'Sameko-GCC', 'bin', exeName));
     }
 
     const basePath = getBasePath();
-    paths.push(path.join(basePath, 'Sameko-GCC', 'bin', 'g++.exe'));
+    paths.push(path.join(basePath, 'Sameko-GCC', 'bin', exeName));
 
     return paths;
 }

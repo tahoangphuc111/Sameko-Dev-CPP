@@ -5,13 +5,13 @@
     "main": "app/main.js",
     "author": "QuangquyNguyenvo",
     "license": "MIT",
-    "homepage": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP",
+    "homepage": "https://github.com/tahoangphuc111/Sameko-Dev-CPP",
     "repository": {
         "type": "git",
-        "url": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP.git"
+        "url": "https://github.com/tahoangphuc111/Sameko-Dev-CPP.git"
     },
     "bugs": {
-        "url": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues"
+        "url": "https://github.com/tahoangphuc111/Sameko-Dev-CPP/issues"
     },
     "keywords": [
         "cpp",
@@ -63,8 +63,9 @@
         "build:win": "electron-builder --win nsis",
         "build:mac": "electron-builder --mac",
         "build:linux": "electron-builder --linux",
-        "clean:dist": "powershell -Command \"Remove-Item -Recurse -Force release_build -ErrorAction SilentlyContinue\"",
+        "clean:dist": "node -e \"require('fs').rmSync('samekodevcpp', {recursive: true, force: true}); require('fs').rmSync('release_build', {recursive: true, force: true})\"",
         "rebuild:win": "npm run clean:dist && npm run build:win",
+        "rebuild:mac": "npm run clean:dist && npm run build:mac",
         "codegraph:sync": "codegraph sync",
         "codegraph:status": "codegraph status",
         "test:debugger": "node scripts/test-debugger.js"
@@ -109,13 +110,9 @@
             "!node_modules/monaco-editor/ThirdPartyNotices.txt",
             "!node_modules/tree-sitter-cpp/src/**",
             "!node_modules/tree-sitter-cpp/*.wasm",
-            "!node_modules/tree-sitter-cpp/prebuilds/darwin-arm64/**",
-            "!node_modules/tree-sitter-cpp/prebuilds/darwin-x64/**",
             "!node_modules/tree-sitter-cpp/prebuilds/linux-arm64/**",
             "!node_modules/tree-sitter-cpp/prebuilds/linux-x64/**",
             "!node_modules/tree-sitter-cpp/prebuilds/win32-arm64/**",
-            "!node_modules/tree-sitter/prebuilds/darwin-arm64/**",
-            "!node_modules/tree-sitter/prebuilds/darwin-x64/**",
             "!node_modules/tree-sitter/prebuilds/linux-x64/**",
             "!**/*.js.map",
             "!**/*.ts.map",
@@ -168,8 +165,13 @@
             "artifactName": "sameko-dev-cpp-${version}-portable.${ext}"
         },
         "mac": {
-            "target": "dmg",
-            "icon": "src/assets/icon.icns"
+            "target": [
+                "dmg",
+                "zip"
+            ],
+            "icon": "src/assets/icon.icns",
+            "category": "public.app-category.developer-tools",
+            "identity": null
         },
         "linux": {
             "target": [

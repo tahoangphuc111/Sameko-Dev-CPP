@@ -594,30 +594,29 @@ const LocalHistory = {
     }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+function initLocalHistoryEvents() {
     LocalHistory.init();
 
     // Close modal when clicking overlay
     const overlay = document.getElementById('local-history-overlay');
     if (overlay) {
-        overlay.addEventListener('click', (e) => {
+        overlay.onclick = (e) => {
             if (e.target === overlay) {
                 LocalHistory.hideHistoryModal();
             }
-        });
+        };
     }
 
     // Close button handler
     const closeBtn = document.getElementById('local-history-close');
     if (closeBtn) {
-        closeBtn.addEventListener('click', () => LocalHistory.hideHistoryModal());
+        closeBtn.onclick = () => LocalHistory.hideHistoryModal();
     }
 
     // Clear history button
     const clearBtn = document.getElementById('local-history-clear');
     if (clearBtn) {
-        clearBtn.addEventListener('click', async () => {
+        clearBtn.onclick = async () => {
             const modal = document.getElementById('local-history-modal');
             const mode = modal?.dataset.mode || 'file';
             const filePath = modal?.dataset.filePath;
@@ -643,9 +642,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-        });
+        };
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLocalHistoryEvents);
+} else {
+    initLocalHistoryEvents();
+}
 
 // Export for use in other modules
 window.LocalHistory = LocalHistory;

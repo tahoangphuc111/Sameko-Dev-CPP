@@ -47,20 +47,25 @@ let resolveInitialization = null;
  * @returns {{clangdPath: string, binDir: string}|null}
  */
 function findClangd() {
-    // 1. Try to find clangd.exe in same directory as g++.exe
+    const exeName = process.platform === 'win32' ? 'clangd.exe' : 'clangd';
+    // 1. Try to find clangd in same directory as g++
     const detectedBinDir = getCompilerBinDir();
     if (detectedBinDir) {
-        const p = path.join(detectedBinDir, 'clangd.exe');
+        const p = path.join(detectedBinDir, exeName);
         if (fs.existsSync(p)) {
             return { clangdPath: p, binDir: detectedBinDir };
         }
     }
-    // 2. Fallback: check Sameko-GCC/bin/clangd.exe relative to app base path
+    // 2. Fallback: check Sameko-GCC/bin/clangd relative to app base path
     const basePath = getBasePath();
     const fallbackBinDir = path.join(basePath, 'Sameko-GCC', 'bin');
-    const fallbackPath = path.join(fallbackBinDir, 'clangd.exe');
+    const fallbackPath = path.join(fallbackBinDir, exeName);
     if (fs.existsSync(fallbackPath)) {
         return { clangdPath: fallbackPath, binDir: fallbackBinDir };
+    }
+    // 3. Fallback on non-Windows: check system clangd in PATH
+    if (process.platform !== 'win32') {
+        return { clangdPath: 'clangd', binDir: '' };
     }
     return null;
 }
