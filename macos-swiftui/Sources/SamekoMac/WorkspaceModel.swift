@@ -15,7 +15,7 @@ final class WorkspaceModel {
     }
 
     struct TestCase: Identifiable, Hashable, Codable {
-        let id = UUID()
+        var id = UUID()
         var name: String
         var input: String
         var expected: String
@@ -528,12 +528,13 @@ final class WorkspaceModel {
 
         let runID = UUID()
         activeRunID = runID
+        let workingDirectory = workspaceURL ?? selectedFile.id.deletingLastPathComponent()
         let executable = FileManager.default.temporaryDirectory
             .appendingPathComponent("sameko-\(UUID().uuidString)")
         let compiler = Process()
         compiler.executableURL = compilerURL
         compiler.arguments = compilerArguments(for: selectedFile.id, executable: executable)
-        compiler.currentDirectoryURL = workspaceURL ?? selectedFile.id.deletingLastPathComponent()
+        compiler.currentDirectoryURL = workingDirectory
 
         let compilerPipe = Pipe()
         compiler.standardOutput = compilerPipe
@@ -556,7 +557,7 @@ final class WorkspaceModel {
 
                 let runner = Process()
                 runner.executableURL = executable
-                runner.currentDirectoryURL = workspaceURL ?? selectedFile.id.deletingLastPathComponent()
+                runner.currentDirectoryURL = workingDirectory
                 let input = Pipe(), runPipe = Pipe()
                 runner.standardInput = input
                 runner.standardOutput = runPipe

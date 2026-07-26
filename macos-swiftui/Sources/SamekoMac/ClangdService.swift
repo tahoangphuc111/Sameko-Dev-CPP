@@ -123,7 +123,9 @@ final class ClangdService: @unchecked Sendable {
             }
         } catch {
             reset()
-            onDiagnostics?(["clangd is unavailable. Install LLVM (for example: brew install llvm)."])
+            if let document = documents.keys.first {
+                onDiagnostics?(document, ["clangd is unavailable. Install LLVM (for example: brew install llvm)."])
+            }
         }
     }
 

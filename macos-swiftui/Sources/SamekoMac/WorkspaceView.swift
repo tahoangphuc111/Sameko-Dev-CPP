@@ -153,7 +153,9 @@ private struct WelcomeCard: View {
                 visible = true
             }
         }
-        .onHover { withAnimation(.spring(response: 0.24, dampingFraction: 0.74)) { hovered = $0 } }
+        .onHover { isHovering in
+            withAnimation(.spring(response: 0.24, dampingFraction: 0.74)) { hovered = isHovering }
+        }
     }
 }
 
