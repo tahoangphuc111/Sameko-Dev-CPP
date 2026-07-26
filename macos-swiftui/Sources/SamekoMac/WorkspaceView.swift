@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct WorkspaceView: View {
@@ -126,15 +127,27 @@ private struct Explorer: View {
         VStack(spacing: 0) {
             HStack { Text("EXPLORER").font(.caption2.weight(.bold)); Spacer(); Button(action: model.createFileInWorkspace) { Image(systemName: "doc.badge.plus") }.buttonStyle(.plain); Button(action: model.createFolderInWorkspace) { Image(systemName: "folder.badge.plus") }.buttonStyle(.plain); Button(action: { model.reloadFiles() }) { Image(systemName: "arrow.clockwise") }.buttonStyle(.plain) }
                 .padding(10).background(.thinMaterial)
-            List(selection: $model.selectedFile) {
-                if model.files.isEmpty { Text("Open a folder to begin").foregroundStyle(.secondary) }
-                ForEach(model.files) { file in Label(file.name, systemImage: file.id.pathExtension == "hpp" ? "curlybraces.square" : "doc.text").padding(.leading, CGFloat(file.depth * 12)).tag(file).contextMenu { Button("Rename…") { model.rename(file) }; Button("Duplicate") { model.duplicate(file) }; Divider(); Button("Move to Trash", role: .destructive) { model.selectedFile = file; model.moveSelectedFileToTrash() } } }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    if model.files.isEmpty {
+                        Text("Open a folder to begin").foregroundStyle(.secondary).padding(12)
+                    }
+                    ForEach(model.files) { file in
+                        Button { model.select(file) } label: {
+                            Label(file.name, systemImage: file.id.pathExtension == "hpp" ? "curlybraces.square" : "doc.text")
+                                .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.leading, CGFloat(file.depth * 12) + 8).padding(.trailing, 8).padding(.vertical, 6)
+                                .background(model.selectedFile?.id == file.id ? Color.accentColor.opacity(0.25) : .clear)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu { Button("Rename…") { model.rename(file) }; Button("Duplicate") { model.duplicate(file) }; Divider(); Button("Move to Trash", role: .destructive) { model.selectedFile = file; model.moveSelectedFileToTrash() } }
+                    }
+                }.padding(6)
             }
-            .scrollContentBackground(.hidden)
-            Spacer()
+            .frame(maxHeight: .infinity)
             Button("Open Folder…", action: model.openFolder).buttonStyle(.borderless).padding(8)
         }
-        .onChange(of: model.selectedFile) { _, file in if let file { model.select(file) } }
         .background(.ultraThinMaterial).clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
@@ -312,7 +325,19 @@ private struct StatusBar: View { @Bindable var model: WorkspaceModel; var body: 
 private struct HeaderIcon: View { let symbol: String; let action: () -> Void; init(_ symbol: String, action: @escaping () -> Void) { self.symbol = symbol; self.action = action }; var body: some View { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.bordered) } }
 private struct WorkspaceBackdrop: View {
     let theme: WorkspaceModel.AppTheme
-    var body: some View { LinearGradient(colors: [Color(nsColor: theme.palette.backdropStart), Color(nsColor: theme.palette.backdropEnd)], startPoint: .topLeading, endPoint: .bottomTrailing).overlay(alignment: .topTrailing) { Circle().fill(Color(nsColor: theme.palette.accent).opacity(0.12)).frame(width: 600).blur(radius: 100) } }
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            let phase = timeline.date.timeIntervalSinceReferenceDate
+            let accent = Color(nsColor: theme.palette.accent)
+            ZStack {
+                LinearGradient(colors: [Color(nsColor: theme.palette.backdropStart), Color(nsColor: theme.palette.backdropEnd)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Circle().fill(accent.opacity(0.15)).frame(width: 620).blur(radius: 100)
+                    .offset(x: CGFloat(sin(phase * 0.22)) * 150, y: CGFloat(cos(phase * 0.17)) * 110)
+                Circle().fill(.white.opacity(0.05)).frame(width: 440).blur(radius: 90)
+                    .offset(x: CGFloat(cos(phase * 0.14)) * 230, y: CGFloat(sin(phase * 0.19)) * 160)
+            }.ignoresSafeArea()
+        }
+    }
 }
 
 private struct SettingsSheet: View {
@@ -367,7 +392,9 @@ private struct SettingsSheet: View {
                     Section("Sameko Mac") { Text("Native SwiftUI migration"); Text("Liquid Glass uses the system material on macOS 26+") }
                 }
             }.formStyle(.grouped).padding()
-        }.frame(minWidth: 680, minHeight: 460)
+        }
+        .frame(minWidth: 680, minHeight: 460)
+        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { model.settingsSection = nil }.keyboardShortcut(.defaultAction) } }
     }
 }
 
