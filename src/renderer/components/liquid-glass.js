@@ -1,77 +1,113 @@
 /**
- * Apple Liquid Glass Manager
- * Encapsulates dynamic SVG displacement filter updates, chromatic subpixel shifts, and performance fallback modes.
+ * Nik Delvin Apple Liquid Glass Refraction Engine
+ * Exact implementation based on liquid-glass (127.0.0.1:4321)
+ * Generates dynamic optical displacement maps with RGB chromatic aberration.
  */
-const LiquidGlassManager = {
-    filterPresets: {
-        subtle: {
-            blur: '0.10',
-            frequency: '0.016 0.030',
-            scale: '2.0',
-            saturation: '1.15',
-            surface: '1.8',
-            constant: '0.36',
-            exponent: '18',
-            redShift: '-1.0',
-            blueShift: '1.0'
-        },
-        balanced: {
-            blur: '0.14',
-            frequency: '0.012 0.024',
-            scale: '3.6',
-            saturation: '1.25',
-            surface: '2.6',
-            constant: '0.46',
-            exponent: '24',
-            redShift: '-1.8',
-            blueShift: '1.8'
-        },
-        strong: {
-            blur: '0.18',
-            frequency: '0.009 0.018',
-            scale: '5.2',
-            saturation: '1.35',
-            surface: '3.4',
-            constant: '0.56',
-            exponent: '30',
-            redShift: '-2.5',
-            blueShift: '2.5'
-        }
+
+const LiquidGlassEngine = {
+    /**
+     * Generate dynamic SVG displacement map Data URI
+     */
+    getDisplacementMap({ height, width, radius, depth }) {
+        const svg = `<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+            <style>.mix { mix-blend-mode: screen; }</style>
+            <defs>
+                <linearGradient id="Y" x1="0" x2="0" y1="${Math.ceil((radius / height) * 15)}%" y2="${Math.floor(100 - (radius / height) * 15)}%">
+                    <stop offset="0%" stop-color="#0F0" />
+                    <stop offset="100%" stop-color="#000" />
+                </linearGradient>
+                <linearGradient id="X" x1="${Math.ceil((radius / width) * 15)}%" x2="${Math.floor(100 - (radius / width) * 15)}%" y1="0" y2="0">
+                    <stop offset="0%" stop-color="#F00" />
+                    <stop offset="100%" stop-color="#000" />
+                </linearGradient>
+            </defs>
+            <rect x="0" y="0" height="${height}" width="${width}" fill="#808080" />
+            <g filter="blur(2px)">
+                <rect x="0" y="0" height="${height}" width="${width}" fill="#000080" />
+                <rect x="0" y="0" height="${height}" width="${width}" fill="url(#Y)" class="mix" />
+                <rect x="0" y="0" height="${height}" width="${width}" fill="url(#X)" class="mix" />
+                <rect x="${depth}" y="${depth}" height="${Math.max(1, height - 2 * depth)}" width="${Math.max(1, width - 2 * depth)}" fill="#808080" rx="${radius}" ry="${radius}" filter="blur(${depth}px)" />
+            </g>
+        </svg>`;
+        return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
     },
 
     /**
-     * Apply Liquid Glass settings to body dataset and SVG filter elements.
-     * @param {Object} appearance - Settings appearance configuration object.
+     * Generate dynamic SVG displacement filter Data URI with RGB Chromatic Aberration
      */
-    apply(appearance) {
-        const enabled = appearance?.liquidGlass !== false;
-        const selectedMode = ['subtle', 'balanced', 'strong'].includes(appearance?.liquidGlassMode)
-            ? appearance.liquidGlassMode
-            : 'balanced';
-        const performanceMode = appearance?.performanceMode === true;
-        const mode = performanceMode ? 'subtle' : selectedMode;
-        const refractionEnabled = appearance?.liquidGlassRefraction !== false && !performanceMode;
+    getDisplacementFilter({ height, width, radius, depth, strength = 40, chromaticAberration = 6 }) {
+        const mapUri = this.getDisplacementMap({ height, width, radius, depth });
+        const svg = `<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="displace" color-interpolation-filters="sRGB">
+                    <feImage x="0" y="0" height="${height}" width="${width}" href="${mapUri}" result="displacementMap" />
+                    <feDisplacementMap transform-origin="center" in="SourceGraphic" in2="displacementMap" scale="${strength + chromaticAberration * 2}" xChannelSelector="R" yChannelSelector="G" />
+                    <feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="displacedR" />
+                    <feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="${strength + chromaticAberration}" xChannelSelector="R" yChannelSelector="G" />
+                    <feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="displacedG" />
+                    <feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="${strength}" xChannelSelector="R" yChannelSelector="G" />
+                    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="displacedB" />
+                    <feBlend in="displacedR" in2="displacedG" mode="screen"/>
+                    <feBlend in2="displacedB" mode="screen"/>
+                </filter>
+            </defs>
+        </svg>`;
+        return "data:image/svg+xml;utf8," + encodeURIComponent(svg) + "#displace";
+    },
 
-        document.body.classList.toggle('glass-disabled', !enabled);
-        document.body.classList.toggle('glass-no-refraction', !refractionEnabled || !enabled);
-        document.body.classList.toggle('glass-performance', enabled && performanceMode);
-        document.body.dataset.glassMode = enabled ? mode : 'off';
+    /**
+     * Redraw glass refraction geometry on target element
+     */
+    redraw(el) {
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const width = Math.max(10, Math.round(rect.width));
+        const height = Math.max(10, Math.round(rect.height));
 
-        const values = this.filterPresets[mode] || this.filterPresets.balanced;
-        const setAttr = (id, name, val) => document.getElementById(id)?.setAttribute(name, val);
+        const blur = parseFloat(el.dataset.blur || "8");
+        const depth = parseFloat(el.dataset.depth || "6");
+        const strength = parseFloat(el.dataset.strength || "30");
+        const chromaticAberration = parseFloat(el.dataset.cab || "4");
+        const radius = parseFloat(getComputedStyle(el).borderRadius || "12");
 
-        setAttr('glass-filter-soften', 'stdDeviation', values.blur);
-        setAttr('glass-filter-map', 'baseFrequency', values.frequency);
-        setAttr('glass-filter-displace', 'scale', values.scale);
-        setAttr('red-shift', 'dx', values.redShift);
-        setAttr('blue-shift', 'dx', values.blueShift);
-        setAttr('glass-filter-color', 'values', values.saturation);
-        setAttr('glass-filter-specular', 'surfaceScale', values.surface);
-        setAttr('glass-filter-specular', 'specularConstant', values.constant);
-        setAttr('glass-filter-specular', 'specularExponent', values.exponent);
+        const filterUrl = this.getDisplacementFilter({ height, width, radius, depth, strength, chromaticAberration });
+        el.style.backdropFilter = `blur(${blur / 2}px) url('${filterUrl}') blur(${blur}px) brightness(1.1) saturate(1.25)`;
+        el.style.webkitBackdropFilter = `blur(${blur / 2}px) url('${filterUrl}') blur(${blur}px) brightness(1.1) saturate(1.25)`;
+    },
+
+    /**
+     * Observe and bind glass elements
+     */
+    init() {
+        const elements = document.querySelectorAll('.liquidglass-refract');
+        elements.forEach(el => {
+            this.redraw(el);
+            if (!el._glassObserver) {
+                el._glassObserver = new ResizeObserver(() => this.redraw(el));
+                el._glassObserver.observe(el);
+            }
+        });
     }
 };
 
+const LiquidGlassManager = {
+    apply(appearance) {
+        const enabled = appearance?.liquidGlass !== false;
+        const performanceMode = appearance?.performanceMode === true;
+
+        document.body.classList.toggle('glass-disabled', !enabled);
+        document.body.classList.toggle('glass-performance', enabled && performanceMode);
+
+        if (enabled && !performanceMode) {
+            setTimeout(() => LiquidGlassEngine.init(), 100);
+        }
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    LiquidGlassEngine.init();
+});
+
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = LiquidGlassManager;
+    module.exports = { LiquidGlassEngine, LiquidGlassManager };
 }

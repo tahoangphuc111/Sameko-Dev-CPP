@@ -1,23 +1,18 @@
 /**
  * Apple Liquid Glass Design System
  * 
- * Implements Apple's WWDC Liquid Glass design language:
- * - Snell's Law optical refraction simulation
- * - Chromatic Aberration RGB subpixel dispersion
- * - Multi-layer Fresnel internal corner light highlights
- * - Hardware-accelerated GPU layer compositing
+ * Selective GPU Layer Architecture (120 FPS):
+ * - Base containers use fast hardware CSS glass (-webkit-backdrop-filter: blur(10px) saturate(1.25)).
+ * - Accent floating elements (.liquidglass-refract) use Nik Delvin's dynamic optical displacement map.
  */
 
 :root {
     --glass-frost: 0.18;
-    --glass-saturation: 1.28;
-    --filter-id: url(#glass-filter);
+    --glass-saturation: 1.25;
     --glass-blur: 10px;
     --glass-blur-light: 8px;
-    --glass-highlight-opacity: 0.72;
     --glass-panel-bg: rgba(238, 246, 255, 0.20);
     --glass-panel-bg-strong: rgba(238, 246, 255, 0.32);
-    --glass-edge: rgba(255, 255, 255, 0.72);
     --glass-edge-soft: rgba(255, 255, 255, 0.28);
     --glass-rim-shadow: 
         inset 10px 10px 20px rgba(153, 192, 255, 0.12), 
@@ -31,7 +26,7 @@
 }
 
 /* ============================================================================
- * LIQUID GLASS PANEL BASE STYLES & GPU ACCELERATION
+ * BASE CONTAINER GLASS PANELS (Optimized for 120 FPS)
  * ============================================================================ */
 .liquidglass,
 .header-bar,
@@ -57,8 +52,8 @@
 .context-menu,
 .dialog-overlay .dialog {
     background: var(--glass-panel-bg) !important;
-    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
-    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur, 10px)) saturate(var(--glass-saturation, 1.25)) !important;
+    backdrop-filter: blur(var(--glass-blur, 10px)) saturate(var(--glass-saturation, 1.25)) !important;
     border-color: var(--glass-edge-soft) !important;
     box-shadow: var(--glass-rim-shadow) !important;
     color: var(--glass-text);
@@ -105,35 +100,8 @@ body.glass-disabled .card-panel::after {
 }
 
 /* ============================================================================
- * NO REFRACTION & PERFORMANCE FALLBACK MODES
+ * DISABLED FALLBACK MODE
  * ============================================================================ */
-body.glass-no-refraction .liquidglass,
-body.glass-no-refraction .header-bar,
-body.glass-no-refraction .status-bar,
-body.glass-no-refraction .panel-head,
-body.glass-no-refraction .terminal-section,
-body.glass-no-refraction .problems-panel,
-body.glass-no-refraction .editor-section,
-body.glass-no-refraction .dropdown,
-body.glass-no-refraction .update-popup,
-body.glass-no-refraction .cc-popup,
-body.glass-no-refraction .color-picker-popup,
-body.glass-no-refraction .fullscreen-popup,
-body.glass-no-refraction .local-history-modal,
-body.glass-no-refraction .snippet-editor-popup,
-body.glass-no-refraction .io-section.three-card-io .card-panel,
-body.glass-no-refraction .welcome-box,
-body.glass-no-refraction .note-dialog,
-body.glass-no-refraction .settings-popup,
-body.glass-no-refraction .tc6-container,
-body.glass-no-refraction .explorer-sidebar,
-body.glass-no-refraction .explorer-header,
-body.glass-no-refraction .context-menu,
-body.glass-no-refraction .dialog-overlay .dialog {
-    -webkit-backdrop-filter: blur(var(--glass-blur, 14px)) saturate(var(--glass-saturation, 1.28)) !important;
-    backdrop-filter: blur(var(--glass-blur, 14px)) saturate(var(--glass-saturation, 1.28)) !important;
-}
-
 body.glass-disabled .liquidglass,
 body.glass-disabled .header-bar,
 body.glass-disabled .status-bar,
