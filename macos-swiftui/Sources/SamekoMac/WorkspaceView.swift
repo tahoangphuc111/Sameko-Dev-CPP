@@ -201,6 +201,10 @@ private struct TestRail: View {
         VStack(spacing: 8) {
             MiniPanel(title: "INPUT", text: $model.testInput)
             MiniPanel(title: "EXPECTED", text: $model.expectedOutput)
+            HStack(spacing: 6) {
+                TextField("Test case name", text: $model.testCaseName).textFieldStyle(.roundedBorder)
+                Button("Save", action: model.saveTestCase).buttonStyle(.borderedProminent).tint(Color.green)
+            }
         }
         .padding(6).background(.ultraThinMaterial).clipShape(RoundedRectangle(cornerRadius: 14))
     }
@@ -231,12 +235,13 @@ private struct TestResults: View {
             let passed = model.testCases.filter { $0.passed == true }.count
             Label("\(passed)/\(model.testCases.count) passed", systemImage: passed == model.testCases.count ? "checkmark.circle.fill" : "circle.dashed")
                 .foregroundStyle(passed == model.testCases.count ? .green : .secondary)
-            ForEach(model.testCases) { test in TestResultRow(test: test) }
+            ForEach(model.testCases) { test in TestResultRow(test: test, onDelete: { model.deleteTestCase(test) }) }
         }.listStyle(.plain).scrollContentBackground(.hidden)
     }
 }
 private struct TestResultRow: View {
     let test: WorkspaceModel.TestCase
+    let onDelete: () -> Void
     private var icon: String { test.passed == nil ? "circle" : (test.passed == true ? "checkmark.seal.fill" : "xmark.seal.fill") }
     private var tint: Color { test.passed == false ? .red : .green }
     var body: some View {
@@ -245,6 +250,7 @@ private struct TestResultRow: View {
             Text(test.name)
             Spacer()
             if let passed = test.passed { Text(passed ? "Passed" : "Failed").foregroundStyle(passed ? Color.green : Color.red) }
+            Button(role: .destructive, action: onDelete) { Image(systemName: "trash") }.buttonStyle(.plain)
         }
     }
 }

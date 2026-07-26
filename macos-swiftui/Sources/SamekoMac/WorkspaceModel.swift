@@ -63,6 +63,7 @@ final class WorkspaceModel {
     var bottomPanel: BottomPanel = .tests
     var testInput = "3\n1 1 8\n1 2 8\n1 3 8"
     var expectedOutput = "1\n1\n1"
+    var testCaseName = ""
     var actualOutput = ""
     var testCases: [TestCase] = [
         TestCase(name: "Test Case 1", input: "3\n1 1 8\n1 2 8\n1 3 8", expected: "1\n1\n1"),
@@ -618,6 +619,25 @@ final class WorkspaceModel {
                 await self?.finishTests(results)
             } catch { await self?.finish("Could not run tests: \(error.localizedDescription)") }
         }
+    }
+
+    func saveTestCase() {
+        let name = testCaseName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedName = name.isEmpty ? "Test Case \(testCases.count + 1)" : name
+        if let index = testCases.firstIndex(where: { $0.name == resolvedName }) {
+            testCases[index].input = testInput
+            testCases[index].expected = expectedOutput
+            testCases[index].actual = ""
+            testCases[index].passed = nil
+        } else {
+            testCases.append(TestCase(name: resolvedName, input: testInput, expected: expectedOutput))
+        }
+        testCaseName = ""
+        output = "Saved \(resolvedName)."
+    }
+
+    func deleteTestCase(_ test: TestCase) {
+        testCases.removeAll { $0.id == test.id }
     }
 
     func insertSnippet(_ snippet: Snippet) {

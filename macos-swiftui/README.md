@@ -20,6 +20,16 @@ then run it. From a fully installed Xcode command line, this also works:
 swift run
 ```
 
+`swift run` is a development command and therefore starts from Terminal. To
+create a normal Finder/Dock application with the Sameko icon, run:
+
+```sh
+./scripts/create-app-bundle.sh
+```
+
+It creates `.build/release/Sameko IDE.app`; open that bundle instead of the
+command-line executable.
+
 ## Current migration slice
 
 - Native `NavigationSplitView` workspace shell and file sidebar
