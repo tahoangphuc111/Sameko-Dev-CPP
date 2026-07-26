@@ -523,15 +523,26 @@ private struct SettingsSheet: View {
     private var selectedSection: WorkspaceModel.SettingsSection { model.settingsSection ?? .editor }
 
     var body: some View {
-        NavigationSplitView {
-            List(WorkspaceModel.SettingsSection.allCases, selection: Binding(
-                get: { model.settingsSection },
-                set: { if let section = $0 { model.settingsSection = section } }
-            )) { section in
-                Label(section.rawValue, systemImage: icon(for: section)).tag(Optional(section))
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Settings").font(.title3.weight(.semibold)).padding(.horizontal, 14).padding(.bottom, 8)
+                ForEach(WorkspaceModel.SettingsSection.allCases) { section in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.16)) { model.settingsSection = section }
+                    } label: {
+                        Label(section.rawValue, systemImage: icon(for: section))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 10).padding(.vertical, 8)
+                            .background(model.settingsSection == section ? Color.accentColor.opacity(0.22) : .clear, in: RoundedRectangle(cornerRadius: 7))
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                }
+                Spacer()
             }
-            .navigationTitle("Settings")
-        } detail: {
+            .padding(10).frame(width: 190)
+            .background(Color(nsColor: .windowBackgroundColor).opacity(0.7))
+            Divider()
             Form {
                 switch selectedSection {
                 case .compiler:
@@ -584,9 +595,13 @@ private struct SettingsSheet: View {
                 case .execution:
                     Section("Execution") { Text(model.toolchainStatus).textSelection(.enabled); Button("Refresh toolchain", action: model.refreshToolchainStatus); Toggle("Show tests", isOn: $model.showTests) }
                 case .about:
-                    Section("Sameko Mac") { Text("Native SwiftUI migration"); Text("Liquid Glass uses the system material on macOS 26+") }
+                    Section("Sameko Mac") { Text("Native SwiftUI migration"); Text("Built for macOS 26+") }
                 }
-            }.formStyle(.grouped).padding()
+            }
+            .formStyle(.grouped)
+            .padding()
+            .id(selectedSection)
+            .transition(.opacity)
         }
         .frame(minWidth: 680, minHeight: 460)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { model.settingsSection = nil }.keyboardShortcut(.defaultAction) } }

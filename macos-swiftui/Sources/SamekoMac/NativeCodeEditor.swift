@@ -87,7 +87,13 @@ struct NativeCodeEditor: NSViewRepresentable {
 
     private func configure(_ textView: NSTextView) {
         let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let visibleForeground = foregroundColor.usingColorSpace(.deviceRGB) ?? .white
+        let visibleBackground = backgroundColor.usingColorSpace(.deviceRGB) ?? .black
         textView.font = font
+        textView.drawsBackground = true
+        textView.backgroundColor = visibleBackground
+        textView.textColor = visibleForeground
+        textView.usesAdaptiveColorMappingForDarkAppearance = false
         textView.textContainerInset = NSSize(width: 12, height: 12)
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
@@ -110,7 +116,7 @@ struct NativeCodeEditor: NSViewRepresentable {
         }()
         textView.typingAttributes = [
             .font: font,
-            .foregroundColor: foregroundColor,
+            .foregroundColor: visibleForeground,
             .paragraphStyle: textView.defaultParagraphStyle ?? NSParagraphStyle.default
         ]
         if textView.frame.width < 1 || textView.frame.height < 1 {
@@ -161,7 +167,7 @@ struct NativeCodeEditor: NSViewRepresentable {
                 // appearance changes. Falling back to labelColor makes code
                 // black under a dark custom editor background, so always use
                 // the palette value supplied by the workspace.
-                .foregroundColor: parent.foregroundColor,
+                .foregroundColor: parent.foregroundColor.usingColorSpace(.deviceRGB) ?? .white,
                 .paragraphStyle: textView.defaultParagraphStyle ?? NSParagraphStyle.default
             ], range: range)
             apply("//.*|/\\*[\\s\\S]*?\\*/", color: .systemGreen, in: storage, range: range)
@@ -169,6 +175,8 @@ struct NativeCodeEditor: NSViewRepresentable {
             apply("\\b(?:alignas|auto|bool|break|case|catch|char|class|const|constexpr|continue|default|delete|do|double|else|enum|explicit|export|false|float|for|friend|if|inline|int|long|namespace|new|noexcept|nullptr|operator|private|protected|public|return|short|signed|sizeof|static|struct|switch|template|this|throw|true|try|typedef|typename|union|unsigned|using|virtual|void|volatile|while)\\b", color: .systemPurple, in: storage, range: range)
             apply("#[[:space:]]*(?:include|define|if|ifdef|ifndef|endif|pragma)", color: .systemPink, in: storage, range: range)
             storage.endEditing()
+            textView.layoutManager?.ensureLayout(for: textView.textContainer!)
+            textView.needsDisplay = true
             textView.setSelectedRange(selection)
             textView.enclosingScrollView?.verticalRulerView?.needsDisplay = true
         }
