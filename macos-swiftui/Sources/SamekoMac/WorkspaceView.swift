@@ -44,7 +44,7 @@ private struct AppHeader: View {
     var body: some View {
         HStack(spacing: 8) {
             Text("C++").font(.caption.weight(.heavy)).foregroundStyle(.black)
-                .frame(width: 38, height: 26).background(.lime).clipShape(Capsule())
+                .frame(width: 38, height: 26).background(Color.green).clipShape(Capsule())
             Menu("File") { Button("New File", action: model.newFile); Button("New File in Workspace", action: model.createFileInWorkspace); Button("New Folder", action: model.createFolderInWorkspace); Divider(); Button("Save") { try? model.save() }; Button("Save As…", action: model.saveAs); Button("Open Folder…", action: model.openFolder) }
             Menu("Edit") { Button("Save") { try? model.save() }; Button("Format Source", action: model.formatSource) }
             Menu("View") { Toggle("Explorer", isOn: $model.showExplorer); Toggle("Tests", isOn: $model.showTests); Toggle("Split Editor", isOn: $model.showSplitEditor) }
@@ -57,7 +57,7 @@ private struct AppHeader: View {
             HeaderIcon("magnifyingglass", action: { model.commandPaletteVisible = true })
             HeaderIcon("ladybug", action: model.startDebugging)
             HeaderIcon("gearshape", action: { model.settingsSection = .appearance })
-            Button(action: model.buildAndRun) { Label("Run", systemImage: "play.fill") }.buttonStyle(.borderedProminent).tint(.lime)
+            Button(action: model.buildAndRun) { Label("Run", systemImage: "play.fill") }.buttonStyle(.borderedProminent).tint(Color.green)
         }
         .padding(.horizontal, 10).frame(height: 46)
         .modifier(GlassChrome(enabled: model.glassEnabled, style: model.glassStyle))
@@ -124,7 +124,7 @@ private struct Explorer: View {
     @Bindable var model: WorkspaceModel
     var body: some View {
         VStack(spacing: 0) {
-            HStack { Text("EXPLORER").font(.caption2.weight(.bold)); Spacer(); Button(action: model.createFileInWorkspace) { Image(systemName: "doc.badge.plus") }.buttonStyle(.plain); Button(action: model.createFolderInWorkspace) { Image(systemName: "folder.badge.plus") }.buttonStyle(.plain); Button(action: model.reloadFiles) { Image(systemName: "arrow.clockwise") }.buttonStyle(.plain) }
+            HStack { Text("EXPLORER").font(.caption2.weight(.bold)); Spacer(); Button(action: model.createFileInWorkspace) { Image(systemName: "doc.badge.plus") }.buttonStyle(.plain); Button(action: model.createFolderInWorkspace) { Image(systemName: "folder.badge.plus") }.buttonStyle(.plain); Button(action: { model.reloadFiles() }) { Image(systemName: "arrow.clockwise") }.buttonStyle(.plain) }
                 .padding(10).background(.thinMaterial)
             List(selection: $model.selectedFile) {
                 if model.files.isEmpty { Text("Open a folder to begin").foregroundStyle(.secondary) }
@@ -195,7 +195,7 @@ private struct TestRail: View {
 
 private struct MiniPanel: View {
     let title: String; @Binding var text: String
-    var body: some View { VStack(spacing: 0) { HStack { Text(title).font(.caption2.weight(.bold)); Spacer(); Image(systemName: "circle.fill").font(.system(size: 7)).foregroundStyle(.lime) }.padding(8); Divider(); TextEditor(text: $text).font(.system(.caption, design: .monospaced)).scrollContentBackground(.hidden).padding(6) }.background(Color.black.opacity(0.36)).clipShape(RoundedRectangle(cornerRadius: 11)) }
+    var body: some View { VStack(spacing: 0) { HStack { Text(title).font(.caption2.weight(.bold)); Spacer(); Image(systemName: "circle.fill").font(.system(size: 7)).foregroundStyle(Color.green) }.padding(8); Divider(); TextEditor(text: $text).font(.system(.caption, design: .monospaced)).scrollContentBackground(.hidden).padding(6) }.background(Color.black.opacity(0.36)).clipShape(RoundedRectangle(cornerRadius: 11)) }
 }
 
 private struct BottomDeck: View {
@@ -203,8 +203,8 @@ private struct BottomDeck: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                ForEach(WorkspaceModel.BottomPanel.allCases) { panel in Button(panel.rawValue.uppercased()) { model.bottomPanel = panel }.font(.caption2.weight(.bold)).buttonStyle(.bordered).tint(model.bottomPanel == panel ? .lime : .gray) }
-                Spacer(); Button("Run All", action: model.runAllTests).buttonStyle(.borderedProminent).tint(.lime)
+                ForEach(WorkspaceModel.BottomPanel.allCases) { panel in Button(panel.rawValue.uppercased()) { model.bottomPanel = panel }.font(.caption2.weight(.bold)).buttonStyle(.bordered).tint(model.bottomPanel == panel ? Color.green : Color.gray) }
+                Spacer(); Button("Run All", action: model.runAllTests).buttonStyle(.borderedProminent).tint(Color.green)
             }.padding(8).background(.thinMaterial)
             Group { switch model.bottomPanel { case .tests: TestResults(model: model); case .terminal: TerminalOutput(model: model); case .problems: ProblemsView(model: model); case .debug: DebugView(model: model) } }
         }.background(Color.black.opacity(0.32)).clipShape(RoundedRectangle(cornerRadius: 14))
@@ -218,16 +218,21 @@ private struct TestResults: View {
             let passed = model.testCases.filter { $0.passed == true }.count
             Label("\(passed)/\(model.testCases.count) passed", systemImage: passed == model.testCases.count ? "checkmark.circle.fill" : "circle.dashed")
                 .foregroundStyle(passed == model.testCases.count ? .green : .secondary)
-            ForEach(model.testCases) { test in
-                HStack {
-                    Image(systemName: test.passed == nil ? "circle" : (test.passed == true ? "checkmark.seal.fill" : "xmark.seal.fill"))
-                        .foregroundStyle(test.passed == false ? .red : .lime)
-                    Text(test.name)
-                    Spacer()
-                    if let passed = test.passed { Text(passed ? "Passed" : "Failed").foregroundStyle(passed ? .green : .red) }
-                }
-            }
+            ForEach(model.testCases) { test in TestResultRow(test: test) }
         }.listStyle(.plain).scrollContentBackground(.hidden)
+    }
+}
+private struct TestResultRow: View {
+    let test: WorkspaceModel.TestCase
+    private var icon: String { test.passed == nil ? "circle" : (test.passed == true ? "checkmark.seal.fill" : "xmark.seal.fill") }
+    private var tint: Color { test.passed == false ? .red : .green }
+    var body: some View {
+        HStack {
+            Image(systemName: icon).foregroundStyle(tint)
+            Text(test.name)
+            Spacer()
+            if let passed = test.passed { Text(passed ? "Passed" : "Failed").foregroundStyle(passed ? Color.green : Color.red) }
+        }
     }
 }
 private struct TerminalOutput: View {

@@ -131,7 +131,11 @@ final class CompetitiveCompanionServer {
             connection.start(queue: .global(qos: .utility))
             connection.receive(minimumIncompleteLength: 1, maximumLength: 1_048_576) { data, _, _, _ in
                 defer { connection.cancel() }
-                guard let data, let request = String(data: data, encoding: .utf8), let body = request.split(separator: "\r\n\r\n", maxSplits: 1).last.data(using: .utf8), let payload = try? JSONDecoder().decode(Payload.self, from: body) else { return }
+                guard let data,
+                      let request = String(data: data, encoding: .utf8),
+                      let separator = request.range(of: "\r\n\r\n") else { return }
+                let body = Data(request[separator.upperBound...].utf8)
+                guard let payload = try? JSONDecoder().decode(Payload.self, from: body) else { return }
                 connection.send(content: Data("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK".utf8), completion: .contentProcessed { _ in })
                 self?.onProblem?(payload)
             }

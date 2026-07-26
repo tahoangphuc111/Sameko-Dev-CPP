@@ -24,7 +24,7 @@ final class WorkspaceModel {
     }
 
     struct Snippet: Identifiable, Hashable, Codable {
-        let id = UUID()
+        var id = UUID()
         var name: String
         var body: String
     }
@@ -892,7 +892,7 @@ final class WorkspaceModel {
         activeTask = nil
     }
 
-    private static func normalized(_ value: String) -> String {
+    nonisolated private static func normalized(_ value: String) -> String {
         value.split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
 }

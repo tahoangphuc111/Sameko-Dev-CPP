@@ -22,19 +22,22 @@ struct WindowStateRestorer: NSViewRepresentable {
 }
 
 final class WindowStateView: NSView {
-    private var observers: [NSObjectProtocol] = []
+    private weak var watchedWindow: NSWindow?
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        guard let window, observers.isEmpty else { return }
+        guard let window, watchedWindow == nil else { return }
+        watchedWindow = window
         if let savedFrame = WindowFrameStore.frame { window.setFrame(savedFrame, display: true) }
         let center = NotificationCenter.default
         for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
-            observers.append(center.addObserver(forName: name, object: window, queue: .main) { notification in
-                if let window = notification.object as? NSWindow { WindowFrameStore.save(window.frame) }
-            })
+            center.addObserver(self, selector: #selector(saveWindowFrame(_:)), name: name, object: window)
         }
     }
 
-    deinit { observers.forEach(NotificationCenter.default.removeObserver) }
+    @objc private func saveWindowFrame(_ notification: Notification) {
+        if let window = notification.object as? NSWindow { WindowFrameStore.save(window.frame) }
+    }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
 }
