@@ -35,11 +35,14 @@ jobs:
       - name: Build
         run: swift build -c release
 
-      # The package produces a raw executable for now. Once an Xcode app target
-      # and signing secrets are added, replace this with a signed .app archive.
-      - name: Upload unsigned build
+      - name: Create unsigned app bundle
+        run: ./scripts/create-app-bundle.sh
+
+      # Download and open this `.app`, not the raw SwiftPM executable. It
+      # includes the icon, wallpaper assets, Info.plist and resource bundle.
+      - name: Upload unsigned app
         uses: actions/upload-artifact@v4
         with:
-          name: SamekoMac-unsigned
-          path: macos-swiftui/.build/release/SamekoMac
+          name: SamekoMac-unsigned-app
+          path: macos-swiftui/.build/release/Sameko IDE.app
           if-no-files-found: error

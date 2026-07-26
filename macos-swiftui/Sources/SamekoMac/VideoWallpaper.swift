@@ -22,6 +22,19 @@ final class VideoWallpaperView: NSView {
     private let webView: WKWebView
     private var currentResource: String?
 
+    /// `Bundle.module` traps if a SwiftPM executable is copied on its own.
+    /// CI used to publish exactly that file, so locate a sidecar bundle only
+    /// when it actually exists and otherwise fall back without crashing.
+    private static let sidecarResourceBundle: Bundle? = {
+        let executableDirectory = Bundle.main.executableURL?.deletingLastPathComponent()
+        let candidates = [
+            executableDirectory?.appendingPathComponent("SamekoMac_SamekoMac.bundle"),
+            Bundle.main.bundleURL.appendingPathComponent("SamekoMac_SamekoMac.bundle"),
+            Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/SamekoMac_SamekoMac.bundle")
+        ]
+        return candidates.compactMap { $0 }.compactMap { Bundle(path: $0.path) }.first
+    }()
+
     init(resourceName: String) {
         let configuration = WKWebViewConfiguration()
         configuration.mediaTypesRequiringUserActionForPlayback = []
@@ -43,7 +56,8 @@ final class VideoWallpaperView: NSView {
     func play(resourceName: String) {
         guard currentResource != resourceName else { return }
         currentResource = resourceName
-        guard let url = Bundle.module.url(forResource: resourceName, withExtension: "webm", subdirectory: "Resources/backgrounds")
+        guard let url = Self.sidecarResourceBundle?.url(forResource: resourceName, withExtension: "webm", subdirectory: "Resources/backgrounds")
+                ?? Self.sidecarResourceBundle?.url(forResource: resourceName, withExtension: "webm", subdirectory: "backgrounds")
                 ?? Bundle.main.url(forResource: resourceName, withExtension: "webm", subdirectory: "backgrounds") else { return }
         let html = """
         <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
