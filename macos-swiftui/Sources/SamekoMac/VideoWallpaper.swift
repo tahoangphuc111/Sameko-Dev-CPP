@@ -21,6 +21,7 @@ struct VideoWallpaper: NSViewRepresentable {
 final class VideoWallpaperView: NSView {
     private let webView: WKWebView
     private var currentResource: String?
+    private weak var observedWindow: NSWindow?
 
     /// `Bundle.module` traps if a SwiftPM executable is copied on its own.
     /// CI used to publish exactly that file, so locate a sidecar bundle only
@@ -40,6 +41,7 @@ final class VideoWallpaperView: NSView {
         configuration.mediaTypesRequiringUserActionForPlayback = []
         webView = WKWebView(frame: .zero, configuration: configuration)
         super.init(frame: .zero)
+        webView.navigationDelegate = self
         wantsLayer = true
         webView.autoresizingMask = [.width, .height]
         addSubview(webView)
@@ -47,6 +49,21 @@ final class VideoWallpaperView: NSView {
     }
 
     required init?(coder: NSCoder) { nil }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        let center = NotificationCenter.default
+        center.removeObserver(self)
+        observedWindow = window
+        center.addObserver(self, selector: #selector(updatePlaybackState(_:)), name: NSApplication.didBecomeActiveNotification, object: nil)
+        center.addObserver(self, selector: #selector(updatePlaybackState(_:)), name: NSApplication.didResignActiveNotification, object: nil)
+        if let window {
+            center.addObserver(self, selector: #selector(updatePlaybackState(_:)), name: NSWindow.didChangeOcclusionStateNotification, object: window)
+            center.addObserver(self, selector: #selector(updatePlaybackState(_:)), name: NSWindow.didMiniaturizeNotification, object: window)
+            center.addObserver(self, selector: #selector(updatePlaybackState(_:)), name: NSWindow.didDeminiaturizeNotification, object: window)
+        }
+        updatePlayback()
+    }
 
     override func layout() {
         super.layout()
@@ -67,5 +84,22 @@ final class VideoWallpaperView: NSView {
         webView.loadHTMLString(html, baseURL: url.deletingLastPathComponent())
     }
 
+    @objc private func updatePlaybackState(_ notification: Notification) { updatePlayback() }
+
+    private func updatePlayback() {
+        let visible = observedWindow?.occlusionState.contains(.visible) == true
+        let shouldPlay = NSApplication.shared.isActive && visible && observedWindow?.isMiniaturized == false
+        let script = shouldPlay
+            ? "document.querySelector('video')?.play().catch(() => {})"
+            : "document.querySelector('video')?.pause()"
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
+}
+
+extension VideoWallpaperView: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { updatePlayback() }
 }

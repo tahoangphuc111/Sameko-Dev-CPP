@@ -43,11 +43,6 @@ final class WindowStateView: NSView {
         center.addObserver(self, selector: #selector(refreshTitlebar(_:)), name: NSWindow.didBecomeMainNotification, object: window)
     }
 
-    override func layout() {
-        super.layout()
-        if let watchedWindow { applyTitlebarStyle(to: watchedWindow) }
-    }
-
     /// The system title field can ignore a late appearance change in the
     /// unified SwiftUI title bar. Hide it and install a native white title so
     /// the label remains legible on every macOS appearance.
@@ -78,8 +73,8 @@ final class WindowStateView: NSView {
             titleAccessory = accessory
             titleLabel = label
         }
-        titleLabel?.stringValue = window.title
-        titleLabel?.textColor = .white
+        if titleLabel?.stringValue != window.title { titleLabel?.stringValue = window.title }
+        if titleLabel?.textColor != .white { titleLabel?.textColor = .white }
     }
 
     @objc private func refreshTitlebar(_ notification: Notification) {

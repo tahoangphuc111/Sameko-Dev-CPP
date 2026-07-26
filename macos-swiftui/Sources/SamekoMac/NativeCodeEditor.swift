@@ -8,6 +8,7 @@ struct NativeCodeEditor: NSViewRepresentable {
     @Binding var source: String
     @Binding var cursorPosition: String
     let fontSize: CGFloat
+    let fontName: String
     let tabSize: Int
     let wordWrap: Bool
     let backgroundColor: NSColor
@@ -56,7 +57,9 @@ struct NativeCodeEditor: NSViewRepresentable {
         scroll.autohidesScrollers = true
         scroll.borderType = .noBorder
         scroll.documentView = textView
-        scroll.verticalRulerView = LineNumberRulerView(textView: textView)
+        let ruler = LineNumberRulerView(textView: textView)
+        ruler.updateLineCount(for: source)
+        scroll.verticalRulerView = ruler
         scroll.hasVerticalRuler = true
         scroll.rulersVisible = true
         context.coordinator.updateCursor(textView)
@@ -71,12 +74,16 @@ struct NativeCodeEditor: NSViewRepresentable {
             let styledSource = NSAttributedString(string: source, attributes: textView.typingAttributes)
             textView.textStorage?.setAttributedString(styledSource)
             textView.setSelectedRange(NSRange(location: min(selection.location, (source as NSString).length), length: 0))
+            context.coordinator.rebuildLineIndex(for: source)
+            (scroll.verticalRulerView as? LineNumberRulerView)?.updateLineCount(for: source)
         }
-        scroll.verticalRulerView?.needsDisplay = true
     }
 
     private func configure(_ textView: NSTextView) {
-        let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let requestedFont = fontName == WorkspaceModel.systemEditorFontID ? nil : NSFont(name: fontName, size: fontSize)
+        let font = requestedFont?.fontDescriptor.symbolicTraits.contains(.monoSpace) == true
+            ? requestedFont!
+            : NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
         let visibleForeground = foregroundColor.usingColorSpace(.deviceRGB) ?? .white
         let visibleBackground = backgroundColor.usingColorSpace(.deviceRGB) ?? .black
         textView.font = font
@@ -117,6 +124,8 @@ struct NativeCodeEditor: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: NativeCodeEditor
+        private var indexedSource = ""
+        private var lineStarts = [0]
 
         init(_ parent: NativeCodeEditor) { self.parent = parent }
 
@@ -124,6 +133,8 @@ struct NativeCodeEditor: NSViewRepresentable {
             guard let textView = notification.object as? NSTextView else { return }
             parent.source = textView.string
             parent.onSourceChange()
+            rebuildLineIndex(for: textView.string)
+            (textView.enclosingScrollView?.verticalRulerView as? LineNumberRulerView)?.updateLineCount(for: textView.string)
             updateCursor(textView)
         }
 
@@ -132,12 +143,27 @@ struct NativeCodeEditor: NSViewRepresentable {
         }
 
         func updateCursor(_ textView: NSTextView) {
-            let range = textView.selectedRange()
-            let prefix = (textView.string as NSString).substring(to: min(range.location, (textView.string as NSString).length))
-            let line = prefix.reduce(into: 1) { if $1 == "\n" { $0 += 1 } }
-            let column = (prefix.lastIndex(of: "\n").map { prefix.distance(from: $0, to: prefix.endIndex) } ?? prefix.count + 1)
-            parent.cursorPosition = "Ln \(line), Col \(column)"
-            parent.onCursorChange(line - 1, column - 1)
+            rebuildLineIndex(for: textView.string)
+            let location = min(textView.selectedRange().location, (textView.string as NSString).length)
+            var lower = 0
+            var upper = lineStarts.count
+            while lower < upper {
+                let middle = (lower + upper) / 2
+                if lineStarts[middle] <= location { lower = middle + 1 } else { upper = middle }
+            }
+            let lineIndex = max(0, lower - 1)
+            let column = location - lineStarts[lineIndex] + 1
+            parent.cursorPosition = "Ln \(lineIndex + 1), Col \(column)"
+            parent.onCursorChange(lineIndex, column - 1)
+        }
+
+        func rebuildLineIndex(for source: String) {
+            guard source != indexedSource else { return }
+            indexedSource = source
+            lineStarts = [0]
+            for (offset, codeUnit) in source.utf16.enumerated() where codeUnit == 10 {
+                lineStarts.append(offset + 1)
+            }
         }
 
     }
@@ -198,6 +224,7 @@ private final class CompletionTextView: NSTextView {
 
 private final class LineNumberRulerView: NSRulerView {
     weak var textView: NSTextView?
+    private var lineCount = 1
 
     init(textView: NSTextView) {
         self.textView = textView
@@ -208,13 +235,19 @@ private final class LineNumberRulerView: NSRulerView {
 
     required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    func updateLineCount(for source: String) {
+        let newCount = max(1, source.utf16.reduce(into: 1) { if $1 == 10 { $0 += 1 } })
+        guard newCount != lineCount else { return }
+        lineCount = newCount
+        needsDisplay = true
+    }
+
     override func drawHashMarksAndLabels(in rect: NSRect) {
         guard let textView, let font = textView.font else { return }
         NSColor.controlBackgroundColor.setFill(); rect.fill()
         let visible = textView.enclosingScrollView?.contentView.bounds ?? .zero
         let lineHeight = ceil(font.ascender - font.descender + font.leading + 3)
         let topInset = textView.textContainerInset.height
-        let lineCount = max(1, textView.string.reduce(into: 1) { if $1 == "\n" { $0 += 1 } })
         let firstLine = max(0, Int(floor((visible.minY - topInset) / lineHeight)))
         let lastLine = min(lineCount - 1, Int(ceil((visible.maxY - topInset) / lineHeight)))
         let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor]

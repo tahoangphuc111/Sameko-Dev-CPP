@@ -51,6 +51,7 @@ struct WorkspaceView: View {
         .onChange(of: model.singleFileCompile) { _, _ in model.persistPreferences() }
         .onChange(of: model.theme) { _, _ in model.persistPreferences() }
         .onChange(of: model.editorFontSize) { _, _ in model.persistPreferences() }
+        .onChange(of: model.editorFontName) { _, _ in model.persistPreferences() }
         .onChange(of: model.editorTabSize) { _, _ in model.persistPreferences() }
         .onChange(of: model.editorWordWrap) { _, _ in model.persistPreferences() }
         .onChange(of: model.autoSaveEnabled) { _, _ in model.persistPreferences() }
@@ -321,6 +322,7 @@ private struct CodeEditor: View {
             source: Binding(get: { model.source(for: tabID) }, set: { model.setSource($0, for: tabID) }),
             cursorPosition: $model.cursorPosition,
             fontSize: model.editorFontSize,
+            fontName: model.editorFontName,
             tabSize: model.editorTabSize,
             wordWrap: model.editorWordWrap,
             backgroundColor: model.theme.palette.editorBackground,
@@ -332,7 +334,7 @@ private struct CodeEditor: View {
                 model.requestCompletions(for: tabID, line: line, column: column, reply: reply)
             }
         )
-        .id("\(tabID)-\(model.theme.rawValue)-\(model.editorFontSize)-\(model.editorTabSize)-\(model.editorWordWrap)")
+        .id("\(tabID)-\(model.theme.rawValue)-\(model.editorFontName)-\(model.editorFontSize)-\(model.editorTabSize)-\(model.editorWordWrap)")
     }
 }
 
@@ -616,6 +618,17 @@ private struct SettingsSheet: View {
                     }
                 case .editor:
                     Section("Editor") {
+                        Picker("Code font", selection: $model.editorFontName) {
+                            ForEach(WorkspaceModel.editorFontOptions) { option in
+                                Text(option.displayName).tag(option.id)
+                            }
+                        }
+                        Text("int main() { return 0; }")
+                            .font(editorPreviewFont)
+                            .foregroundStyle(Color(nsColor: model.theme.palette.editorForeground))
+                            .padding(.horizontal, 10).padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(nsColor: model.theme.palette.editorBackground), in: RoundedRectangle(cornerRadius: 7))
                         Slider(value: $model.editorFontSize, in: 11...24, step: 1) { Text("Font size") } minimumValueLabel: { Text("11") } maximumValueLabel: { Text("24") }
                         Picker("Indentation", selection: $model.editorTabSize) { Text("2 spaces").tag(2); Text("4 spaces").tag(4); Text("8 spaces").tag(8) }
                         Toggle("Word wrap", isOn: $model.editorWordWrap)
@@ -656,6 +669,13 @@ private struct SettingsSheet: View {
         case .snippets: "curlybraces.square"
         case .about: "info.circle"
         }
+    }
+
+    private var editorPreviewFont: Font {
+        if model.editorFontName == WorkspaceModel.systemEditorFontID {
+            return .system(size: model.editorFontSize, design: .monospaced)
+        }
+        return .custom(model.editorFontName, size: model.editorFontSize)
     }
 }
 

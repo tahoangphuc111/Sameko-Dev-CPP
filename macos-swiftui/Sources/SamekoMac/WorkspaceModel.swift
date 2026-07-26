@@ -83,6 +83,7 @@ final class WorkspaceModel {
     var extraFlags = ""
     var singleFileCompile = true
     var editorFontSize: Double = 14
+    var editorFontName = WorkspaceModel.systemEditorFontID
     var editorTabSize = 4
     var editorWordWrap = false
     var cursorPosition = "Ln 1, Col 1"
@@ -135,6 +136,33 @@ final class WorkspaceModel {
         let editorForeground: NSColor
         let accent: NSColor
     }
+
+    struct EditorFontOption: Identifiable, Hashable {
+        let id: String
+        let displayName: String
+    }
+
+    static let systemEditorFontID = "__sameko_system_monospace__"
+    static let editorFontOptions: [EditorFontOption] = {
+        var families: [String: EditorFontOption] = [:]
+        let fonts = NSFontManager.shared.availableFonts.compactMap { NSFont(name: $0, size: 14) }
+            .filter { $0.fontDescriptor.symbolicTraits.contains(.monoSpace) }
+            .sorted {
+                let lhsStyle = $0.fontName.lowercased()
+                let rhsStyle = $1.fontName.lowercased()
+                let lhsPenalty = lhsStyle.contains("bold") || lhsStyle.contains("italic") ? 1 : 0
+                let rhsPenalty = rhsStyle.contains("bold") || rhsStyle.contains("italic") ? 1 : 0
+                return lhsPenalty == rhsPenalty ? lhsStyle < rhsStyle : lhsPenalty < rhsPenalty
+            }
+        for font in fonts {
+            let family = font.familyName ?? font.displayName ?? font.fontName
+            if families[family] == nil {
+                families[family] = EditorFontOption(id: font.fontName, displayName: family)
+            }
+        }
+        return [EditorFontOption(id: systemEditorFontID, displayName: "System Monospaced")]
+            + families.values.sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+    }()
 
     enum AppTheme: String, CaseIterable, Identifiable {
         case ocean = "Ocean"
@@ -781,6 +809,7 @@ final class WorkspaceModel {
         defaults.set(singleFileCompile, forKey: "singleFileCompile")
         defaults.set(theme.rawValue, forKey: "theme")
         defaults.set(editorFontSize, forKey: "editorFontSize")
+        defaults.set(editorFontName, forKey: "editorFontName")
         defaults.set(editorTabSize, forKey: "editorTabSize")
         defaults.set(editorWordWrap, forKey: "editorWordWrap")
         defaults.set(autoSaveEnabled, forKey: "autoSaveEnabled")
@@ -796,6 +825,12 @@ final class WorkspaceModel {
         if defaults.object(forKey: "singleFileCompile") != nil { singleFileCompile = defaults.bool(forKey: "singleFileCompile") }
         theme = AppTheme(rawValue: defaults.string(forKey: "theme") ?? "") ?? .ocean
         if defaults.object(forKey: "editorFontSize") != nil { editorFontSize = defaults.double(forKey: "editorFontSize") }
+        if let savedFont = defaults.string(forKey: "editorFontName") {
+            let installedFont = NSFont(name: savedFont, size: 14)
+            if savedFont == Self.systemEditorFontID || installedFont?.fontDescriptor.symbolicTraits.contains(.monoSpace) == true {
+                editorFontName = savedFont
+            }
+        }
         if defaults.object(forKey: "editorTabSize") != nil { editorTabSize = defaults.integer(forKey: "editorTabSize") }
         if defaults.object(forKey: "editorWordWrap") != nil { editorWordWrap = defaults.bool(forKey: "editorWordWrap") }
         if defaults.object(forKey: "autoSaveEnabled") != nil { autoSaveEnabled = defaults.bool(forKey: "autoSaveEnabled") }
