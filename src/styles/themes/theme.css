@@ -8295,62 +8295,62 @@ body.performance-mode .dialog-overlay .dialog {
     backdrop-filter: saturate(var(--glass-saturation, 1.08)) blur(var(--glass-blur, 4px)) !important;
 }
 
+/* When code tabs are closed / Welcome screen active: Hide IO cards & terminal */
+#welcome:not([style*="display: none"]) ~ .content-wrapper .io-section,
+#welcome:not([style*="display: none"]) ~ .content-wrapper #resizer-io,
+#welcome:not([style*="display: none"]) ~ .content-wrapper #terminal-section,
+#welcome:not([style*="display: none"]) ~ .content-wrapper #resizer-term,
+.main:has(#welcome:not([style*="display: none"])) .io-section,
+.main:has(#welcome:not([style*="display: none"])) #resizer-io,
+.main:has(#welcome:not([style*="display: none"])) #terminal-section,
+.main:has(#welcome:not([style*="display: none"])) #resizer-term,
+body:has(#welcome:not([style*="display: none"])) .io-section,
+body:has(#welcome:not([style*="display: none"])) #resizer-io,
+body:has(#welcome:not([style*="display: none"])) #terminal-section,
+body:has(#welcome:not([style*="display: none"])) #resizer-term {
+    display: none !important;
+}
+
+/* ===== IO SINGLE COLUMN STACK (1 Vertical Column with 3 Stacked Cards) ===== */
 .main:has(.io-section.three-card-io:not(.panel-hidden)) {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 10px clamp(210px, 24vw, 420px) !important;
-    grid-template-rows: minmax(0, 1fr) clamp(128px, 19vh, 184px) !important;
-    grid-template-areas:
-        "editor terminal-resizer terminal"
-        "io io terminal" !important;
-    gap: 8px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-template-areas: none !important;
     align-items: stretch !important;
-    flex-direction: initial !important;
 }
 
 .main:has(.io-section.three-card-io:not(.panel-hidden)) .editor-section {
-    grid-area: editor !important;
+    flex: 1 1 auto !important;
     width: auto !important;
     min-width: 0 !important;
 }
 
 .main:has(.io-section.three-card-io:not(.panel-hidden)) #resizer-io {
-    display: none !important;
-}
-
-.main:has(.io-section.three-card-io:not(.panel-hidden)) #resizer-term {
-    grid-area: terminal-resizer !important;
     display: block !important;
-    width: 10px !important;
-    height: auto !important;
-}
-
-.main:has(.io-section.three-card-io:not(.panel-hidden)) .terminal-section {
-    grid-area: terminal !important;
-    width: auto !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
 }
 
 .main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io {
-    grid-area: io !important;
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: minmax(0, 1fr) !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: clamp(230px, 22vw, 340px) !important;
+    min-width: 190px !important;
+    max-width: 380px !important;
     height: 100% !important;
     min-height: 0 !important;
     overflow: hidden !important;
-    gap: 8px !important;
     padding: 0 !important;
 }
 
 .main:has(.io-section.three-card-io:not(.panel-hidden)) .io-section.three-card-io .card-panel {
+    flex: 1 1 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
     min-width: 0 !important;
     min-height: 0 !important;
-    height: 100% !important;
+    height: auto !important;
     border-radius: 12px !important;
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.08)),
