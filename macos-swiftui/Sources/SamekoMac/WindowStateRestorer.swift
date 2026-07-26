@@ -28,6 +28,7 @@ final class WindowStateView: NSView {
         super.viewDidMoveToWindow()
         guard let window, watchedWindow == nil else { return }
         watchedWindow = window
+        window.appearance = NSAppearance(named: .darkAqua)
         if let savedFrame = WindowFrameStore.frame { window.setFrame(savedFrame, display: true) }
         let center = NotificationCenter.default
         for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {

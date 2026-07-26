@@ -33,10 +33,6 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.isAutomaticTextReplacementEnabled = false
         textView.usesFindBar = true
         textView.delegate = context.coordinator
-        textView.backgroundColor = backgroundColor
-        textView.textColor = foregroundColor
-        textView.insertionPointColor = accentColor
-        textView.string = source
         textView.requestCompletions = { [weak textView] line, column in
             guard let textView else { return }
             self.requestCompletions(line, column) { values in
@@ -44,9 +40,10 @@ struct NativeCodeEditor: NSViewRepresentable {
             }
         }
         configure(textView)
-        textView.backgroundColor = backgroundColor
-        textView.textColor = foregroundColor
-        textView.insertionPointColor = accentColor
+        // Assign the source only after configuring typing attributes. Mutating
+        // NSTextStorage attributes after attachment to SwiftUI caused TextKit
+        // 1 to drop all glyphs on the next update in macOS 26.
+        textView.string = source
 
         let scroll = NSScrollView()
         scroll.drawsBackground = true
@@ -59,7 +56,6 @@ struct NativeCodeEditor: NSViewRepresentable {
         scroll.verticalRulerView = LineNumberRulerView(textView: textView)
         scroll.hasVerticalRuler = true
         scroll.rulersVisible = true
-        context.coordinator.applyBaseStyle(textView)
         context.coordinator.updateCursor(textView)
         return scroll
     }
@@ -67,6 +63,7 @@ struct NativeCodeEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let textView = scroll.documentView as? NSTextView else { return }
         context.coordinator.parent = self
+        configure(textView)
         if textView.string != source {
             let selection = textView.selectedRange()
             textView.string = source
@@ -75,8 +72,6 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.backgroundColor = backgroundColor
         textView.textColor = foregroundColor
         textView.insertionPointColor = accentColor
-        configure(textView)
-        context.coordinator.applyBaseStyle(textView)
         if wordWrap {
             textView.frame.size.width = max(1, scroll.contentSize.width)
         }
@@ -102,7 +97,7 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.textContainer?.lineFragmentPadding = 0
         textView.textContainer?.widthTracksTextView = wordWrap
         textView.textContainer?.containerSize = wordWrap
-            ? NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+            ? NSSize(width: max(1, textView.bounds.width), height: CGFloat.greatestFiniteMagnitude)
             : NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         let tabWidth = font.maximumAdvancement.width * CGFloat(max(1, tabSize))
         let tabs = NSTextTab(textAlignment: .left, location: tabWidth, options: [:])
@@ -126,15 +121,13 @@ struct NativeCodeEditor: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: NativeCodeEditor
-        private var isApplyingStyle = false
 
         init(_ parent: NativeCodeEditor) { self.parent = parent }
 
         func textDidChange(_ notification: Notification) {
-            guard !isApplyingStyle, let textView = notification.object as? NSTextView else { return }
+            guard let textView = notification.object as? NSTextView else { return }
             parent.source = textView.string
             parent.onSourceChange()
-            applyBaseStyle(textView)
             updateCursor(textView)
         }
 
@@ -151,20 +144,6 @@ struct NativeCodeEditor: NSViewRepresentable {
             parent.onCursorChange(line - 1, column - 1)
         }
 
-        /// Syntax attribute replacement caused NSTextView on macOS 26/Xcode 27
-        /// to stop drawing every glyph shortly after its first update. Keep a
-        /// stable foreground attribute; syntax colors can return once the
-        /// AppKit regression is resolved.
-        func applyBaseStyle(_ textView: NSTextView) {
-            guard !isApplyingStyle else { return }
-            isApplyingStyle = true
-            defer { isApplyingStyle = false }
-            let range = NSRange(location: 0, length: (textView.string as NSString).length)
-            guard range.length > 0, let storage = textView.textStorage else { return }
-            storage.addAttribute(.foregroundColor, value: parent.foregroundColor.usingColorSpace(.deviceRGB) ?? .white, range: range)
-            textView.needsDisplay = true
-            textView.enclosingScrollView?.verticalRulerView?.needsDisplay = true
-        }
     }
 }
 

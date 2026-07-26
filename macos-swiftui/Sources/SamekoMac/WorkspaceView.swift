@@ -163,7 +163,7 @@ private struct AppHeader: View {
     @Bindable var model: WorkspaceModel
     var body: some View {
         HStack(spacing: 8) {
-            Text("C++").font(.caption.weight(.heavy)).foregroundStyle(.white)
+            Text("C++").font(.caption.weight(.heavy)).foregroundStyle(.black)
                 .frame(width: 38, height: 26).background(Color.green).clipShape(Capsule())
             Menu("File") { Button("New File", action: model.newFile); Button("New File in Workspace", action: model.createFileInWorkspace); Button("New Folder", action: model.createFolderInWorkspace); Divider(); Button("Save") { try? model.save() }; Button("Save As…", action: model.saveAs); Button("Open Folder…", action: model.openFolder); Divider(); Button("Show Welcome") { model.showWelcome = true } }
             Menu("Edit") { Button("Save") { try? model.save() }; Button("Format Source", action: model.formatSource) }
@@ -332,6 +332,7 @@ private struct CodeEditor: View {
                 model.requestCompletions(for: tabID, line: line, column: column, reply: reply)
             }
         )
+        .id("\(model.theme.rawValue)-\(model.editorFontSize)-\(model.editorTabSize)-\(model.editorWordWrap)")
     }
 }
 
