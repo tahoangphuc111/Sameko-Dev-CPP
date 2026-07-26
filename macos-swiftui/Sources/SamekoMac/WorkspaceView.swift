@@ -352,7 +352,22 @@ private struct TestRail: View {
 
 private struct MiniPanel: View {
     let title: String; @Binding var text: String
-    var body: some View { VStack(spacing: 0) { HStack { Text(title).font(.caption2.weight(.bold)); Spacer(); Image(systemName: "circle.fill").font(.system(size: 7)).foregroundStyle(Color.green) }.padding(8); Divider(); TextEditor(text: $text).font(.system(.caption, design: .monospaced)).scrollContentBackground(.hidden).padding(6) }.background(Color.black.opacity(0.36)).clipShape(RoundedRectangle(cornerRadius: 11)) }
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack { Text(title).font(.caption2.weight(.bold)); Spacer(); Image(systemName: "circle.fill").font(.system(size: 7)).foregroundStyle(Color.green) }
+                .padding(8)
+            Divider()
+            TextEditor(text: $text)
+                .font(.system(.caption, design: .monospaced))
+                .textEditorStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .foregroundStyle(.primary)
+                .focusable(true)
+                .padding(8)
+        }
+        .background(Color.black.opacity(0.36))
+        .clipShape(RoundedRectangle(cornerRadius: 11))
+    }
 }
 
 private struct BottomDeck: View {

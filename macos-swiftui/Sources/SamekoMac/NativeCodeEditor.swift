@@ -59,7 +59,7 @@ struct NativeCodeEditor: NSViewRepresentable {
         scroll.verticalRulerView = LineNumberRulerView(textView: textView)
         scroll.hasVerticalRuler = true
         scroll.rulersVisible = true
-        context.coordinator.highlight(textView)
+        context.coordinator.applyBaseStyle(textView)
         context.coordinator.updateCursor(textView)
         return scroll
     }
@@ -71,13 +71,12 @@ struct NativeCodeEditor: NSViewRepresentable {
             let selection = textView.selectedRange()
             textView.string = source
             textView.setSelectedRange(NSRange(location: min(selection.location, (source as NSString).length), length: 0))
-            context.coordinator.highlight(textView)
         }
         textView.backgroundColor = backgroundColor
         textView.textColor = foregroundColor
         textView.insertionPointColor = accentColor
         configure(textView)
-        context.coordinator.highlight(textView)
+        context.coordinator.applyBaseStyle(textView)
         if wordWrap {
             textView.frame.size.width = max(1, scroll.contentSize.width)
         }
@@ -127,15 +126,15 @@ struct NativeCodeEditor: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: NativeCodeEditor
-        private var isHighlighting = false
+        private var isApplyingStyle = false
 
         init(_ parent: NativeCodeEditor) { self.parent = parent }
 
         func textDidChange(_ notification: Notification) {
-            guard !isHighlighting, let textView = notification.object as? NSTextView else { return }
+            guard !isApplyingStyle, let textView = notification.object as? NSTextView else { return }
             parent.source = textView.string
             parent.onSourceChange()
-            highlight(textView)
+            applyBaseStyle(textView)
             updateCursor(textView)
         }
 
@@ -152,40 +151,19 @@ struct NativeCodeEditor: NSViewRepresentable {
             parent.onCursorChange(line - 1, column - 1)
         }
 
-        func highlight(_ textView: NSTextView) {
-            guard !isHighlighting else { return }
-            isHighlighting = true
-            defer { isHighlighting = false }
-            let text = textView.string as NSString
-            let range = NSRange(location: 0, length: text.length)
-            let selection = textView.selectedRange()
-            let storage = textView.textStorage!
-            storage.beginEditing()
-            storage.setAttributes([
-                .font: textView.font ?? NSFont.monospacedSystemFont(ofSize: 14, weight: .regular),
-                // NSTextView may return nil for textColor after SwiftUI/AppKit
-                // appearance changes. Falling back to labelColor makes code
-                // black under a dark custom editor background, so always use
-                // the palette value supplied by the workspace.
-                .foregroundColor: parent.foregroundColor.usingColorSpace(.deviceRGB) ?? .white,
-                .paragraphStyle: textView.defaultParagraphStyle ?? NSParagraphStyle.default
-            ], range: range)
-            apply("//.*|/\\*[\\s\\S]*?\\*/", color: .systemGreen, in: storage, range: range)
-            apply("\\\"(?:\\\\.|[^\\\"])*\\\"|'(?:\\\\.|[^'])*'", color: .systemOrange, in: storage, range: range)
-            apply("\\b(?:alignas|auto|bool|break|case|catch|char|class|const|constexpr|continue|default|delete|do|double|else|enum|explicit|export|false|float|for|friend|if|inline|int|long|namespace|new|noexcept|nullptr|operator|private|protected|public|return|short|signed|sizeof|static|struct|switch|template|this|throw|true|try|typedef|typename|union|unsigned|using|virtual|void|volatile|while)\\b", color: .systemPurple, in: storage, range: range)
-            apply("#[[:space:]]*(?:include|define|if|ifdef|ifndef|endif|pragma)", color: .systemPink, in: storage, range: range)
-            storage.endEditing()
-            textView.layoutManager?.ensureLayout(for: textView.textContainer!)
+        /// Syntax attribute replacement caused NSTextView on macOS 26/Xcode 27
+        /// to stop drawing every glyph shortly after its first update. Keep a
+        /// stable foreground attribute; syntax colors can return once the
+        /// AppKit regression is resolved.
+        func applyBaseStyle(_ textView: NSTextView) {
+            guard !isApplyingStyle else { return }
+            isApplyingStyle = true
+            defer { isApplyingStyle = false }
+            let range = NSRange(location: 0, length: (textView.string as NSString).length)
+            guard range.length > 0, let storage = textView.textStorage else { return }
+            storage.addAttribute(.foregroundColor, value: parent.foregroundColor.usingColorSpace(.deviceRGB) ?? .white, range: range)
             textView.needsDisplay = true
-            textView.setSelectedRange(selection)
             textView.enclosingScrollView?.verticalRulerView?.needsDisplay = true
-        }
-
-        private func apply(_ pattern: String, color: NSColor, in storage: NSTextStorage, range: NSRange) {
-            guard let expression = try? NSRegularExpression(pattern: pattern) else { return }
-            expression.enumerateMatches(in: storage.string, range: range) { match, _, _ in
-                if let range = match?.range { storage.addAttribute(.foregroundColor, value: color, range: range) }
-            }
         }
     }
 }
