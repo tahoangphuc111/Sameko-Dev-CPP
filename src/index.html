@@ -13,8 +13,9 @@
     <link rel="stylesheet" href="styles/themes/theme.css">
     <link rel="stylesheet" href="styles/components/suggest-fix.css">
     <link rel="stylesheet" href="styles/components/snippet-editor.css">
-    <link rel="stylesheet" href="styles/components/liquid-glass.css">
     <link rel="stylesheet" href="styles/themes/themes.css">
+    <link rel="stylesheet" href="styles/components/liquid-glass.css">
+    <link rel="stylesheet" href="styles/components/macos-liquid-glass.css">
     <link rel="stylesheet" href="styles/components/local-history.css">
     <link rel="stylesheet" href="styles/components/confirm-dialog.css">
     <link rel="stylesheet" href="../node_modules/monaco-editor/min/vs/editor/editor.main.css">
@@ -770,7 +771,7 @@
                                 <h3>Liquid Glass UI</h3>
                                 <div class="setting-row">
                                     <label>Enable Liquid Glass <span class="tooltip"
-                                            title="Use layered translucent surfaces, edge highlights, and SVG refraction">?</span></label>
+                                            title="Use a light macOS-style material for navigation and floating controls">?</span></label>
                                     <label class="switch">
                                         <input type="checkbox" id="set-liquidGlass" checked>
                                         <span class="slider"></span>
@@ -785,8 +786,8 @@
                                     </select>
                                 </div>
                                 <div class="setting-row">
-                                    <label>Refraction Highlights <span class="tooltip"
-                                            title="Adds SVG displacement and specular highlights to glass surfaces">?</span></label>
+                                    <label>Edge highlights <span class="tooltip"
+                                            title="Show the subtle light-catching rim on floating glass controls">?</span></label>
                                     <label class="switch">
                                         <input type="checkbox" id="set-liquidGlassRefraction" checked>
                                         <span class="slider"></span>
@@ -1470,29 +1471,6 @@
     <script src="features/debugger/debugger-ui.js"></script>
     <script src="renderer/components/liquid-glass.js"></script>
     <script src="renderer/app.js"></script>
-    <svg style="display:none" class="glass-surface__filter">
-        <filter id="glass-filter" color-interpolation-filters="sRGB">
-            <feGaussianBlur id="glass-filter-soften" in="SourceGraphic" stdDeviation="0.16" result="glass-soften" />
-            <feTurbulence id="glass-filter-map" type="fractalNoise" baseFrequency="0.014 0.028" numOctaves="1" seed="9" result="glass-map" />
-            <feDisplacementMap id="glass-filter-displace" in="glass-soften" in2="glass-map" scale="4.2" xChannelSelector="R" yChannelSelector="G" result="glass-refract" />
-            
-            <!-- Chromatic Aberration Dispersion (RGB Split) -->
-            <feColorMatrix in="glass-refract" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red-chan" />
-            <feOffset dx="-1.5" dy="0" in="red-chan" result="red-shift" />
-            <feColorMatrix in="glass-refract" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green-chan" />
-            <feColorMatrix in="glass-refract" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue-chan" />
-            <feOffset dx="1.5" dy="0" in="blue-chan" result="blue-shift" />
-            <feBlend in="red-shift" in2="green-chan" mode="screen" result="rg-blend" />
-            <feBlend in="rg-blend" in2="blue-shift" mode="screen" result="chromatic-refract" />
-
-            <feColorMatrix id="glass-filter-color" in="chromatic-refract" type="saturate" values="1.22" result="glass-color" />
-            <feSpecularLighting id="glass-filter-specular" in="glass-map" surfaceScale="2.8" specularConstant="0.48" specularExponent="22" lighting-color="#ffffff" result="glass-specular">
-                <feDistantLight azimuth="-60" elevation="45" />
-            </feSpecularLighting>
-            <feComposite in="glass-specular" in2="glass-color" operator="in" result="glass-rim" />
-            <feBlend in="glass-color" in2="glass-rim" mode="screen" />
-        </filter>
-    </svg>
 </body>
 
 </html>
