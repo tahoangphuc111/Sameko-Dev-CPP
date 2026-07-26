@@ -214,12 +214,20 @@ final class WorkspaceModel {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
+        panel.prompt = "Open Workspace"
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url else { return }
+            Task { @MainActor in self?.openWorkspace(at: url) }
+        }
+    }
 
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+    private func openWorkspace(at url: URL) {
         workspaceURL = url
+        selectedFile = nil
         reloadFiles()
         workspaceWatcher.watch(url)
         persistSession()
+        output = files.isEmpty ? "No C++ source files found in \(url.lastPathComponent)." : "Opened workspace \(url.lastPathComponent)."
     }
 
     func reloadFiles(selectFirst: Bool = true) {

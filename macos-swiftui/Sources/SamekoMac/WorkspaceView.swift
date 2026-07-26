@@ -331,12 +331,22 @@ private struct StatusBar: View { @Bindable var model: WorkspaceModel; var body: 
 private struct HeaderIcon: View { let symbol: String; let action: () -> Void; init(_ symbol: String, action: @escaping () -> Void) { self.symbol = symbol; self.action = action }; var body: some View { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.bordered) } }
 private struct WorkspaceBackdrop: View {
     let theme: WorkspaceModel.AppTheme
+    private var videoName: String {
+        switch theme {
+        case .dracula: "dracula"
+        case .monokai: "monokai"
+        case .nord: "nord"
+        case .kawaiiDark, .kawaiiLight, .sakura: "pink"
+        case .ocean, .graphite: "darkblue"
+        }
+    }
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
             let phase = timeline.date.timeIntervalSinceReferenceDate
             let accent = Color(nsColor: theme.palette.accent)
             ZStack {
                 LinearGradient(colors: [Color(nsColor: theme.palette.backdropStart), Color(nsColor: theme.palette.backdropEnd)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                VideoWallpaper(resourceName: videoName).opacity(0.5)
                 Circle().fill(accent.opacity(0.15)).frame(width: 620).blur(radius: 100)
                     .offset(x: CGFloat(sin(phase * 0.22)) * 150, y: CGFloat(cos(phase * 0.17)) * 110)
                 Circle().fill(.white.opacity(0.05)).frame(width: 440).blur(radius: 90)

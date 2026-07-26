@@ -22,6 +22,8 @@ struct NativeCodeEditor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         let textView = CompletionTextView()
         textView.isRichText = false
+        textView.isEditable = true
+        textView.isSelectable = true
         textView.allowsUndo = true
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.isAutomaticDashSubstitutionEnabled = false
@@ -74,6 +76,10 @@ struct NativeCodeEditor: NSViewRepresentable {
         let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
         textView.font = font
         textView.textContainerInset = NSSize(width: 12, height: 12)
+        textView.minSize = NSSize(width: 0, height: 0)
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = !wordWrap
         textView.textContainer?.lineFragmentPadding = 0
         textView.textContainer?.widthTracksTextView = wordWrap
         textView.textContainer?.containerSize = wordWrap
