@@ -12,11 +12,11 @@
     --glass-frost: 0.18;
     --glass-saturation: 1.28;
     --filter-id: url(#glass-filter);
-    --glass-blur: 14px;
-    --glass-blur-light: 10px;
+    --glass-blur: 10px;
+    --glass-blur-light: 8px;
     --glass-highlight-opacity: 0.72;
-    --glass-panel-bg: rgba(238, 246, 255, 0.22);
-    --glass-panel-bg-strong: rgba(238, 246, 255, 0.34);
+    --glass-panel-bg: rgba(238, 246, 255, 0.20);
+    --glass-panel-bg-strong: rgba(238, 246, 255, 0.32);
     --glass-edge: rgba(255, 255, 255, 0.72);
     --glass-edge-soft: rgba(255, 255, 255, 0.28);
     --glass-rim-shadow: 
@@ -28,31 +28,6 @@
         0 10px 34px rgba(6, 12, 24, 0.16);
     --glass-text: #17324a;
     --glass-text-muted: #375e7a;
-}
-
-/* ============================================================================
- * SINGLE-PASS SHARED BACKDROP BLUR LAYER & WEBGL CANVAS
- * Chromium computes Gaussian Blur EXACTLY ONCE on this shared background layer.
- * ============================================================================ */
-.app-shared-backdrop-blur {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    -webkit-backdrop-filter: blur(var(--glass-blur, 16px)) saturate(var(--glass-saturation, 1.28)) !important;
-    backdrop-filter: blur(var(--glass-blur, 16px)) saturate(var(--glass-saturation, 1.28)) !important;
-    transform: translateZ(0);
-    contain: strict;
-}
-
-#liquid-glass-webgl-canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.85;
 }
 
 /* ============================================================================
