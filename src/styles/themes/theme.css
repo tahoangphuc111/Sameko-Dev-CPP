@@ -25,8 +25,8 @@
 :root, :host {
     --glass-frost: 0.18;
     --glass-saturation: 1.28;
-    --filter-id: url(#glass-filter);
-    --glass-blur: 14px;
+    --filter-id: none;
+    --glass-blur: 12px;
     --glass-blur-light: 10px;
     --glass-highlight-opacity: 0.72;
     --glass-panel-bg: rgba(238, 246, 255, 0.22);
@@ -350,8 +350,8 @@ body.customizer-open::before {
 .context-menu,
 .dialog-overlay .dialog {
     background: var(--glass-panel-bg) !important;
-    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
-    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(var(--glass-saturation, 1.28)) !important;
+    backdrop-filter: blur(var(--glass-blur, 12px)) saturate(var(--glass-saturation, 1.28)) !important;
     border-color: var(--glass-edge-soft) !important;
     box-shadow: var(--glass-rim-shadow) !important;
     color: var(--glass-text);
