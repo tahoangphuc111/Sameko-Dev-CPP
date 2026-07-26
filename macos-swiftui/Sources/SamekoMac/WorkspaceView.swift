@@ -5,27 +5,45 @@ struct WorkspaceView: View {
     @Bindable var model: WorkspaceModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            AppHeader(model: model)
-            HStack(spacing: 8) {
-                if model.showExplorer { Explorer(model: model).frame(width: 218) }
-                VStack(spacing: 8) {
-                    EditorDeck(model: model)
-                    BottomDeck(model: model).frame(minHeight: 180, idealHeight: 220, maxHeight: 290)
+        ZStack {
+            WorkspaceBackdrop(theme: model.theme).allowsHitTesting(false)
+            if model.showWelcome {
+                WelcomeView(model: model)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } else {
+                VStack(spacing: 0) {
+                    AppHeader(model: model)
+                    HStack(spacing: 8) {
+                        if model.showExplorer {
+                            Explorer(model: model).frame(width: 218)
+                                .transition(.move(edge: .leading).combined(with: .opacity))
+                        }
+                        VStack(spacing: 8) {
+                            EditorDeck(model: model).layoutPriority(1)
+                            BottomDeck(model: model).frame(minHeight: 180, idealHeight: 220, maxHeight: 290)
+                        }
+                        if model.showTests {
+                            TestRail(model: model).frame(width: 238)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    StatusBar(model: model)
                 }
-                if model.showTests { TestRail(model: model).frame(width: 238) }
             }
-            .padding(8)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            StatusBar(model: model)
         }
-        .background(WorkspaceBackdrop(theme: model.theme))
         .overlay {
             if model.commandPaletteVisible { CommandPalette(model: model) }
         }
-        .sheet(item: $model.settingsSection) { section in SettingsSheet(model: model, section: section) }
-        .onChange(of: model.glassEnabled) { _, _ in model.persistPreferences() }
-        .onChange(of: model.glassStyle) { _, _ in model.persistPreferences() }
+        .sheet(isPresented: Binding(
+            get: { model.settingsSection != nil },
+            set: { if !$0 { model.settingsSection = nil } }
+        )) { SettingsSheet(model: model) }
+        .animation(.easeInOut(duration: 0.22), value: model.showExplorer)
+        .animation(.easeInOut(duration: 0.22), value: model.showTests)
+        .animation(.easeInOut(duration: 0.18), value: model.showSplitEditor)
+        .animation(.easeInOut(duration: 0.28), value: model.showWelcome)
         .onChange(of: model.cppStandard) { _, _ in model.persistPreferences() }
         .onChange(of: model.optimization) { _, _ in model.persistPreferences() }
         .onChange(of: model.warningsEnabled) { _, _ in model.persistPreferences() }
@@ -40,13 +58,112 @@ struct WorkspaceView: View {
     }
 }
 
+private struct WelcomeView: View {
+    @Bindable var model: WorkspaceModel
+    @State private var appeared = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 9) {
+                HStack(spacing: 9) {
+                    Image(systemName: "fish.fill").font(.title2).foregroundStyle(Color(nsColor: model.theme.palette.accent))
+                    Text("Sameko IDE").font(.system(size: 30, weight: .bold, design: .rounded))
+                }
+                Text("A focused C++ workspace for building, testing, and debugging.")
+                    .font(.title3).foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 14) {
+                WelcomeCard(
+                    index: 0,
+                    icon: "doc.badge.plus",
+                    title: "New C++ file",
+                    subtitle: "Start from a compact C++ template.",
+                    accent: Color(nsColor: model.theme.palette.accent),
+                    action: model.newFile
+                )
+                WelcomeCard(
+                    index: 1,
+                    icon: "folder.badge.gearshape",
+                    title: "Open workspace",
+                    subtitle: "Browse a project folder and its C++ sources.",
+                    accent: Color(nsColor: model.theme.palette.accent),
+                    action: model.openFolder
+                )
+                WelcomeCard(
+                    index: 2,
+                    icon: "arrow.counterclockwise",
+                    title: "Resume session",
+                    subtitle: model.workspaceURL.map { "Return to \($0.lastPathComponent)." } ?? "No previous workspace to restore.",
+                    accent: Color(nsColor: model.theme.palette.accent),
+                    enabled: model.canResumeSession,
+                    action: model.resumeLastSession
+                )
+            }
+        }
+        .padding(34)
+        .frame(maxWidth: 940, alignment: .leading)
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.92), in: RoundedRectangle(cornerRadius: 20))
+        .overlay { RoundedRectangle(cornerRadius: 20).stroke(.white.opacity(0.14)) }
+        .shadow(color: .black.opacity(0.24), radius: 28, y: 16)
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+        .onAppear { withAnimation(.easeOut(duration: 0.42)) { appeared = true } }
+        .padding(28)
+    }
+}
+
+private struct WelcomeCard: View {
+    let index: Int
+    let icon: String
+    let title: String
+    let subtitle: String
+    let accent: Color
+    var enabled = true
+    let action: () -> Void
+    @State private var hovered = false
+    @State private var visible = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 16) {
+                Image(systemName: icon)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent.opacity(0.15), in: RoundedRectangle(cornerRadius: 11))
+                Text(title).font(.headline)
+                Text(subtitle).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                Label(enabled ? "Continue" : "Unavailable", systemImage: enabled ? "arrow.right" : "minus")
+                    .font(.caption.weight(.semibold)).foregroundStyle(enabled ? accent : .secondary)
+            }
+            .padding(18).frame(maxWidth: .infinity, minHeight: 190, alignment: .leading)
+            .background(.black.opacity(hovered ? 0.19 : 0.11), in: RoundedRectangle(cornerRadius: 14))
+            .overlay { RoundedRectangle(cornerRadius: 14).stroke(hovered ? accent.opacity(0.65) : .white.opacity(0.12)) }
+        }
+        .buttonStyle(PressableChrome())
+        .disabled(!enabled)
+        .scaleEffect(visible ? (hovered ? 1.025 : 1) : 0.92)
+        .opacity(visible ? 1 : 0)
+        .offset(y: visible ? (hovered ? -5 : 0) : 24)
+        .shadow(color: hovered ? accent.opacity(0.24) : .clear, radius: 16, y: 8)
+        .onAppear {
+            withAnimation(.spring(response: 0.48, dampingFraction: 0.74).delay(Double(index) * 0.10)) {
+                visible = true
+            }
+        }
+        .onHover { withAnimation(.spring(response: 0.24, dampingFraction: 0.74)) { hovered = $0 } }
+    }
+}
+
 private struct AppHeader: View {
     @Bindable var model: WorkspaceModel
     var body: some View {
         HStack(spacing: 8) {
             Text("C++").font(.caption.weight(.heavy)).foregroundStyle(.black)
                 .frame(width: 38, height: 26).background(Color.green).clipShape(Capsule())
-            Menu("File") { Button("New File", action: model.newFile); Button("New File in Workspace", action: model.createFileInWorkspace); Button("New Folder", action: model.createFolderInWorkspace); Divider(); Button("Save") { try? model.save() }; Button("Save As…", action: model.saveAs); Button("Open Folder…", action: model.openFolder) }
+            Menu("File") { Button("New File", action: model.newFile); Button("New File in Workspace", action: model.createFileInWorkspace); Button("New Folder", action: model.createFolderInWorkspace); Divider(); Button("Save") { try? model.save() }; Button("Save As…", action: model.saveAs); Button("Open Folder…", action: model.openFolder); Divider(); Button("Show Welcome") { model.showWelcome = true } }
             Menu("Edit") { Button("Save") { try? model.save() }; Button("Format Source", action: model.formatSource) }
             Menu("View") { Toggle("Explorer", isOn: $model.showExplorer); Toggle("Tests", isOn: $model.showTests); Toggle("Split Editor", isOn: $model.showSplitEditor) }
             Menu("Run") { Button("Build & Run", action: model.buildAndRun); Button("Start Debugging", action: model.startDebugging); Button("Stop", action: model.stop) }
@@ -61,7 +178,8 @@ private struct AppHeader: View {
             Button(action: model.buildAndRun) { Label("Run", systemImage: "play.fill") }.buttonStyle(.borderedProminent).tint(Color.green)
         }
         .padding(.horizontal, 10).frame(height: 46)
-        .modifier(GlassChrome(enabled: model.glassEnabled, style: model.glassStyle))
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.94))
+        .overlay(alignment: .bottom) { Divider().opacity(0.55) }
     }
 }
 
@@ -112,8 +230,9 @@ private struct TabStrip: View {
                         Button { model.closeTab(tab) } label: { Image(systemName: "xmark").font(.caption2) }.buttonStyle(.plain)
                     }
                     .font(.caption.weight(.medium)).padding(.horizontal, 9).frame(height: 26)
-                    .background(model.activeTabID == tab.id ? Color.white.opacity(0.16) : .clear)
+                    .background(model.activeTabID == tab.id ? Color.accentColor.opacity(0.24) : .clear)
                     .clipShape(Capsule()).contentShape(Capsule()).onTapGesture { model.activateTab(tab) }
+                    .animation(.easeInOut(duration: 0.16), value: model.activeTabID)
                 }
             }
         }
@@ -148,7 +267,8 @@ private struct Explorer: View {
             .frame(maxHeight: .infinity)
             Button("Open Folder…", action: model.openFolder).buttonStyle(.borderless).padding(8)
         }
-        .background(.ultraThinMaterial).clipShape(RoundedRectangle(cornerRadius: 14))
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.88)).clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay { RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.10)) }
     }
 }
 
@@ -156,9 +276,22 @@ private struct EditorDeck: View {
     @Bindable var model: WorkspaceModel
     var body: some View {
         Group {
-            if model.showSplitEditor {
-                HStack(spacing: 1) { CodeEditor(model: model); CodeEditor(model: model) }
-            } else { CodeEditor(model: model) }
+            if model.showSplitEditor, let activeID = model.activeTabID {
+                HStack(spacing: 1) {
+                    CodeEditor(model: model, tabID: activeID)
+                    VStack(spacing: 0) {
+                        Picker("Split tab", selection: Binding(
+                            get: { model.splitTabID ?? model.tabs.first(where: { $0.id != activeID })?.id ?? activeID },
+                            set: { model.splitTabID = $0 }
+                        )) {
+                            ForEach(model.tabs) { Text($0.title).tag($0.id) }
+                        }
+                        .labelsHidden().pickerStyle(.menu).frame(maxWidth: .infinity, alignment: .leading).padding(6)
+                        Divider()
+                        CodeEditor(model: model, tabID: model.splitTabID ?? model.tabs.first(where: { $0.id != activeID })?.id ?? activeID)
+                    }
+                }
+            } else if let activeID = model.activeTabID { CodeEditor(model: model, tabID: activeID) }
         }
         .overlay(alignment: .topTrailing) { Text(model.activeTabID == nil ? "untitled.cpp" : "C++20").font(.caption2).foregroundStyle(.secondary).padding(10) }
         .overlay(alignment: .top) {
@@ -171,16 +304,19 @@ private struct EditorDeck: View {
                 .padding(6).background(.yellow.opacity(0.92)).foregroundStyle(.black).clipShape(Capsule()).padding(8)
             }
         }
-        .background(Color(nsColor: .textBackgroundColor)).clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay { RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.1)) }
+        .frame(minHeight: 280, maxHeight: .infinity)
+        .background(Color(nsColor: model.theme.palette.editorBackground)).clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay { RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.14)) }
+        .animation(.easeInOut(duration: 0.18), value: model.showSplitEditor)
     }
 }
 
 private struct CodeEditor: View {
     @Bindable var model: WorkspaceModel
+    let tabID: WorkspaceModel.EditorTab.ID
     var body: some View {
         NativeCodeEditor(
-            source: $model.source,
+            source: Binding(get: { model.source(for: tabID) }, set: { model.setSource($0, for: tabID) }),
             cursorPosition: $model.cursorPosition,
             fontSize: model.editorFontSize,
             tabSize: model.editorTabSize,
@@ -188,9 +324,11 @@ private struct CodeEditor: View {
             backgroundColor: model.theme.palette.editorBackground,
             foregroundColor: model.theme.palette.editorForeground,
             accentColor: model.theme.palette.accent,
-            onSourceChange: model.sourceDidChange,
+            onSourceChange: { model.sourceDidChange(for: tabID) },
             onCursorChange: model.updateCursor,
-            requestCompletions: model.requestCompletions
+            requestCompletions: { line, column, reply in
+                model.requestCompletions(for: tabID, line: line, column: column, reply: reply)
+            }
         )
     }
 }
@@ -223,8 +361,19 @@ private struct BottomDeck: View {
                 ForEach(WorkspaceModel.BottomPanel.allCases) { panel in Button(panel.rawValue.uppercased()) { model.bottomPanel = panel }.font(.caption2.weight(.bold)).buttonStyle(.bordered).tint(model.bottomPanel == panel ? Color.green : Color.gray) }
                 Spacer(); Button("Run All", action: model.runAllTests).buttonStyle(.borderedProminent).tint(Color.green)
             }.padding(8).background(.thinMaterial)
-            Group { switch model.bottomPanel { case .tests: TestResults(model: model); case .terminal: TerminalOutput(model: model); case .problems: ProblemsView(model: model); case .debug: DebugView(model: model) } }
-        }.background(Color.black.opacity(0.32)).clipShape(RoundedRectangle(cornerRadius: 14))
+            Group {
+                switch model.bottomPanel {
+                case .tests: TestResults(model: model)
+                case .terminal: TerminalOutput(model: model)
+                case .problems: ProblemsView(model: model)
+                case .debug: DebugView(model: model)
+                }
+            }
+            .id(model.bottomPanel)
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
+        }
+        .background(Color.black.opacity(0.32)).clipShape(RoundedRectangle(cornerRadius: 12))
+        .animation(.easeInOut(duration: 0.18), value: model.bottomPanel)
     }
 }
 
@@ -328,7 +477,18 @@ private struct ProblemsView: View {
 }
 
 private struct StatusBar: View { @Bindable var model: WorkspaceModel; var body: some View { HStack { Label("Sameko Mac", systemImage: "fish"); Spacer(); Text(model.companionStatus).foregroundStyle(.secondary); Divider().frame(height: 12); Text(model.isRunning ? "Building…" : "Ready"); Divider().frame(height: 12); Text(model.cursorPosition); Divider().frame(height: 12); Text(model.cppStandard.uppercased()) }.font(.caption2).padding(.horizontal, 10).frame(height: 24).background(.thinMaterial) } }
-private struct HeaderIcon: View { let symbol: String; let action: () -> Void; init(_ symbol: String, action: @escaping () -> Void) { self.symbol = symbol; self.action = action }; var body: some View { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.bordered) } }
+private struct HeaderIcon: View {
+    let symbol: String
+    let action: () -> Void
+    init(_ symbol: String, action: @escaping () -> Void) { self.symbol = symbol; self.action = action }
+    var body: some View {
+        Button(action: action) { Image(systemName: symbol).frame(width: 14, height: 14) }
+            .buttonStyle(PressableChrome())
+            .padding(6)
+            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+            .overlay { RoundedRectangle(cornerRadius: 7).stroke(.white.opacity(0.10)) }
+    }
+}
 private struct WorkspaceBackdrop: View {
     let theme: WorkspaceModel.AppTheme
     private var videoName: String {
@@ -357,20 +517,31 @@ private struct WorkspaceBackdrop: View {
 }
 
 private struct SettingsSheet: View {
-    @Bindable var model: WorkspaceModel; let section: WorkspaceModel.SettingsSection
+    @Bindable var model: WorkspaceModel
+    private var selectedSection: WorkspaceModel.SettingsSection { model.settingsSection ?? .editor }
+
     var body: some View {
         NavigationSplitView {
-            List(WorkspaceModel.SettingsSection.allCases, selection: $model.settingsSection) { Text($0.rawValue).tag(Optional($0)) }.navigationTitle("Settings")
+            List(WorkspaceModel.SettingsSection.allCases, selection: Binding(
+                get: { model.settingsSection },
+                set: { if let section = $0 { model.settingsSection = section } }
+            )) { section in
+                Label(section.rawValue, systemImage: icon(for: section)).tag(Optional(section))
+            }
+            .navigationTitle("Settings")
         } detail: {
             Form {
-                switch section {
+                switch selectedSection {
                 case .compiler:
                     Section("Compiler") { Picker("C++ standard", selection: $model.cppStandard) { ForEach(["c++17", "c++20", "c++23", "c++26"], id: \.self) { Text($0).tag($0) } }; Picker("Optimisation", selection: $model.optimization) { ForEach(["-O0", "-O2", "-O3"], id: \.self) { Text($0).tag($0) } }; Toggle("Warnings", isOn: $model.warningsEnabled); Toggle("Single-file compile", isOn: $model.singleFileCompile); if !model.singleFileCompile { Text("Builds all .cpp, .cc and .cxx files in the workspace.").font(.caption).foregroundStyle(.secondary) }; TextField("Additional flags", text: $model.extraFlags) }
                 case .snippets:
                     Section("Snippet editor") {
                         TextField("Name", text: $model.snippetName)
                         TextEditor(text: $model.snippetBody).font(.system(.body, design: .monospaced)).frame(minHeight: 110)
-                        Button(model.snippetName.isEmpty ? "Add snippet" : "Save snippet", action: model.saveSnippet)
+                        HStack {
+                            Button("Save snippet", action: model.saveSnippet).buttonStyle(.borderedProminent)
+                            Button("New") { model.snippetName = ""; model.snippetBody = "" }.buttonStyle(.bordered)
+                        }
                     }
                     Section("Saved snippets") {
                         ForEach(model.snippets) { snippet in
@@ -383,7 +554,13 @@ private struct SettingsSheet: View {
                         }
                     }
                 case .appearance:
-                    Section("Appearance") { Picker("Color theme", selection: $model.theme) { ForEach(WorkspaceModel.AppTheme.allCases) { Text($0.rawValue).tag($0) } }; Toggle("Liquid Glass", isOn: $model.glassEnabled); Picker("Glass style", selection: $model.glassStyle) { ForEach(WorkspaceModel.GlassStyle.allCases) { Text($0.rawValue).tag($0) } } }
+                    Section("Appearance") {
+                        Picker("Color theme", selection: $model.theme) {
+                            ForEach(WorkspaceModel.AppTheme.allCases) { Text($0.rawValue).tag($0) }
+                        }
+                        Text("Sameko uses solid native surfaces for a stable, readable workspace.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 case .editor:
                     Section("Editor") {
                         Slider(value: $model.editorFontSize, in: 11...24, step: 1) { Text("Font size") } minimumValueLabel: { Text("11") } maximumValueLabel: { Text("24") }
@@ -412,6 +589,24 @@ private struct SettingsSheet: View {
         .frame(minWidth: 680, minHeight: 460)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { model.settingsSection = nil }.keyboardShortcut(.defaultAction) } }
     }
+
+    private func icon(for section: WorkspaceModel.SettingsSection) -> String {
+        switch section {
+        case .editor: "text.cursor"
+        case .compiler: "hammer"
+        case .execution: "play.circle"
+        case .appearance: "paintpalette"
+        case .snippets: "curlybraces.square"
+        case .about: "info.circle"
+        }
+    }
 }
 
-private struct GlassChrome: ViewModifier { let enabled: Bool; let style: WorkspaceModel.GlassStyle; @ViewBuilder func body(content: Content) -> some View { if enabled { if #available(macOS 26.0, *) { content.glassEffect(style == .clear ? .clear : .regular, in: .rect(cornerRadius: 0)) } else { content.background(.bar) } } else { content.background(.bar) } } }
+private struct PressableChrome: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .opacity(configuration.isPressed ? 0.76 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}

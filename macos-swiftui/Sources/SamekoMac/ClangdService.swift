@@ -7,9 +7,10 @@ struct ClangdCompletion: Identifiable, Hashable, Sendable {
 }
 
 /// Small JSON-RPC/LSP client for the system clangd.  It deliberately owns a
-/// single document because Sameko Mac currently has one active source buffer.
+/// It tracks each open tab independently so diagnostics cannot leak between
+/// files when the editor is split.
 final class ClangdService: @unchecked Sendable {
-    typealias DiagnosticsHandler = @Sendable ([String]) -> Void
+    typealias DiagnosticsHandler = @Sendable (URL, [String]) -> Void
 
     var onDiagnostics: DiagnosticsHandler?
     private let queue = DispatchQueue(label: "me.wibu.sameko.clangd", qos: .userInitiated)
@@ -18,36 +19,42 @@ final class ClangdService: @unchecked Sendable {
     private var buffer = Data()
     private var nextID = 1
     private var pending: [Int: (Result<Any, Error>) -> Void] = [:]
-    private var documentURL: URL?
-    private var documentVersion = 0
+    private var documents: [URL: (version: Int, source: String)] = [:]
     private var isReady = false
 
     func open(document: URL, source: String, root: URL?) {
         queue.async { [weak self] in
             guard let self else { return }
-            self.documentURL = document
-            self.documentVersion = 1
+            let alreadyOpen = self.documents[document] != nil
+            self.documents[document] = (alreadyOpen ? (self.documents[document]?.version ?? 0) + 1 : 1, source)
             if self.process == nil { self.launch(root: root, source: source) }
-            else if self.isReady { self.didOpen(source) }
+            else if self.isReady {
+                if alreadyOpen { self.didChange(document) }
+                else { self.didOpen(document) }
+            }
         }
     }
 
-    func update(source: String) {
+    func update(document: URL, source: String) {
         queue.async { [weak self] in
-            guard let self, self.isReady, self.documentURL != nil else { return }
-            self.documentVersion += 1
-            self.notify("textDocument/didChange", [
-                "textDocument": ["uri": self.documentURL!.absoluteString, "version": self.documentVersion],
-                "contentChanges": [["text": source]]
-            ])
+            guard let self, self.documents[document] != nil else { return }
+            self.documents[document] = ((self.documents[document]?.version ?? 0) + 1, source)
+            if self.isReady { self.didChange(document) }
         }
     }
 
-    func completions(line: Int, column: Int, source: String, reply: @escaping @Sendable ([ClangdCompletion]) -> Void) {
+    func close(document: URL) {
         queue.async { [weak self] in
-            guard let self, self.isReady, let url = self.documentURL else { reply([]); return }
+            guard let self, self.documents.removeValue(forKey: document) != nil, self.isReady else { return }
+            self.notify("textDocument/didClose", ["textDocument": ["uri": document.absoluteString]])
+        }
+    }
+
+    func completions(document: URL, line: Int, column: Int, reply: @escaping @Sendable ([ClangdCompletion]) -> Void) {
+        queue.async { [weak self] in
+            guard let self, self.isReady, self.documents[document] != nil else { reply([]); return }
             self.request("textDocument/completion", [
-                "textDocument": ["uri": url.absoluteString],
+                "textDocument": ["uri": document.absoluteString],
                 "position": ["line": line, "character": column],
                 "context": ["triggerKind": 1]
             ]) { result in
@@ -63,11 +70,11 @@ final class ClangdService: @unchecked Sendable {
         }
     }
 
-    func hover(line: Int, column: Int, reply: @escaping @Sendable (String?) -> Void) {
+    func hover(document: URL, line: Int, column: Int, reply: @escaping @Sendable (String?) -> Void) {
         queue.async { [weak self] in
-            guard let self, self.isReady, let url = self.documentURL else { reply(nil); return }
+            guard let self, self.isReady, self.documents[document] != nil else { reply(nil); return }
             self.request("textDocument/hover", [
-                "textDocument": ["uri": url.absoluteString],
+                "textDocument": ["uri": document.absoluteString],
                 "position": ["line": line, "character": column]
             ]) { result in
                 guard let object = result as? [String: Any] else { reply(nil); return }
@@ -98,7 +105,7 @@ final class ClangdService: @unchecked Sendable {
         do {
             try task.run()
             process = task; input = stdin.fileHandleForWriting
-            let rootURI = (root ?? documentURL?.deletingLastPathComponent())?.absoluteString ?? ""
+            let rootURI = (root ?? self.documents.keys.first?.deletingLastPathComponent())?.absoluteString ?? ""
             request("initialize", [
                 "processId": ProcessInfo.processInfo.processIdentifier,
                 "rootUri": rootURI,
@@ -112,7 +119,7 @@ final class ClangdService: @unchecked Sendable {
                 guard let self else { return }
                 self.isReady = true
                 self.notify("initialized", [:])
-                self.didOpen(source)
+                for document in self.documents.keys { self.didOpen(document) }
             }
         } catch {
             reset()
@@ -120,10 +127,18 @@ final class ClangdService: @unchecked Sendable {
         }
     }
 
-    private func didOpen(_ source: String) {
-        guard let url = documentURL else { return }
+    private func didOpen(_ url: URL) {
+        guard let document = documents[url] else { return }
         notify("textDocument/didOpen", [
-            "textDocument": ["uri": url.absoluteString, "languageId": "cpp", "version": documentVersion, "text": source]
+            "textDocument": ["uri": url.absoluteString, "languageId": "cpp", "version": document.version, "text": document.source]
+        ])
+    }
+
+    private func didChange(_ url: URL) {
+        guard let document = documents[url] else { return }
+        notify("textDocument/didChange", [
+            "textDocument": ["uri": url.absoluteString, "version": document.version],
+            "contentChanges": [["text": document.source]]
         ])
     }
 
@@ -170,13 +185,15 @@ final class ClangdService: @unchecked Sendable {
         }
         guard message["method"] as? String == "textDocument/publishDiagnostics",
               let params = message["params"] as? [String: Any],
+              let uri = params["uri"] as? String,
+              let url = URL(string: uri),
               let diagnostics = params["diagnostics"] as? [[String: Any]] else { return }
         let messages = diagnostics.compactMap { item -> String? in
             guard let text = item["message"] as? String else { return nil }
             let line = ((item["range"] as? [String: Any])?["start"] as? [String: Any])?["line"] as? Int
             return line.map { "Line \($0 + 1): \(text)" } ?? text
         }
-        onDiagnostics?(messages)
+        onDiagnostics?(url, messages)
     }
 
     private static func hoverText(from value: Any?) -> String? {

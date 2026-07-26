@@ -23,25 +23,55 @@ struct CheckpointRecord: Codable, Identifiable {
 }
 
 enum CheckpointStore {
-    static func load(for fileName: String) -> [CheckpointRecord] {
-        let file = SamekoStorage.checkpoints.appendingPathComponent("\(fileName).json")
+    /// The old Electron migration keyed history by filename.  That made every
+    /// `main.cpp` share a timeline; keep it scoped to the canonical file URL.
+    private static func storageURL(for fileURL: URL) -> URL {
+        let key = fileURL.standardizedFileURL.absoluteString
+            .data(using: .utf8)!
+            .base64EncodedString()
+            .replacing("/", with: "_")
+        return SamekoStorage.checkpoints.appendingPathComponent("\(key).json")
+    }
+
+    static func load(for fileURL: URL) -> [CheckpointRecord] {
+        let file = storageURL(for: fileURL)
         guard let data = try? Data(contentsOf: file) else { return [] }
         return (try? JSONDecoder().decode([CheckpointRecord].self, from: data)) ?? []
     }
 
-    static func save(source: String, fileName: String, limit: Int = 20) {
+    static func save(source: String, for fileURL: URL, limit: Int = 20) {
         try? FileManager.default.createDirectory(at: SamekoStorage.checkpoints, withIntermediateDirectories: true)
-        let file = SamekoStorage.checkpoints.appendingPathComponent("\(fileName).json")
-        var values = load(for: fileName)
-        values.insert(CheckpointRecord(id: UUID(), createdAt: .now, fileName: fileName, source: source), at: 0)
+        let file = storageURL(for: fileURL)
+        var values = load(for: fileURL)
+        values.insert(CheckpointRecord(id: UUID(), createdAt: .now, fileName: fileURL.lastPathComponent, source: source), at: 0)
         if values.count > limit { values.removeLast(values.count - limit) }
         let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
         try? encoder.encode(values).write(to: file, options: .atomic)
     }
 
-    static func clear(for fileName: String) {
-        let file = SamekoStorage.checkpoints.appendingPathComponent("\(fileName).json")
+    static func clear(for fileURL: URL) {
+        let file = storageURL(for: fileURL)
         try? FileManager.default.removeItem(at: file)
+    }
+}
+
+enum TestCaseStore {
+    private static func storageURL(for fileURL: URL) -> URL {
+        let key = fileURL.standardizedFileURL.absoluteString
+            .data(using: .utf8)!
+            .base64EncodedString()
+            .replacing("/", with: "_")
+        return SamekoStorage.root.appendingPathComponent("tests-\(key).json")
+    }
+
+    static func load(for fileURL: URL) -> [WorkspaceModel.TestCase] {
+        guard let data = try? Data(contentsOf: storageURL(for: fileURL)) else { return [] }
+        return (try? JSONDecoder().decode([WorkspaceModel.TestCase].self, from: data)) ?? []
+    }
+
+    static func save(_ tests: [WorkspaceModel.TestCase], for fileURL: URL) {
+        guard let data = try? JSONEncoder().encode(tests) else { return }
+        try? data.write(to: storageURL(for: fileURL), options: .atomic)
     }
 }
 
@@ -129,23 +159,45 @@ final class CompetitiveCompanionServer: @unchecked Sendable {
         let listener = try NWListener(using: .tcp, on: 10043)
         listener.newConnectionHandler = { [weak self] connection in
             connection.start(queue: .global(qos: .utility))
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 1_048_576) { [weak self] data, _, _, _ in
-                defer { connection.cancel() }
-                guard let server = self else { return }
-                guard let data,
-                      let request = String(data: data, encoding: .utf8),
-                      let separator = request.range(of: "\r\n\r\n") else { return }
-                let body = Data(request[separator.upperBound...].utf8)
-                guard let payload = try? JSONDecoder().decode(Payload.self, from: body) else { return }
-                connection.send(content: Data("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK".utf8), completion: .contentProcessed { _ in })
-                server.onProblem?(payload)
-            }
+            self?.receiveRequest(on: connection, buffer: Data())
         }
         listener.start(queue: .global(qos: .utility))
         self.listener = listener
     }
 
     func stop() { listener?.cancel(); listener = nil }
+
+    private func receiveRequest(on connection: NWConnection, buffer: Data) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, isComplete, _ in
+            guard let self else { connection.cancel(); return }
+            var bytes = buffer
+            if let data { bytes.append(data) }
+
+            guard let headerEnd = bytes.range(of: Data("\r\n\r\n".utf8)) else {
+                guard bytes.count < 1_048_576, !isComplete else { connection.cancel(); return }
+                self.receiveRequest(on: connection, buffer: bytes)
+                return
+            }
+            let headers = String(decoding: bytes[..<headerEnd.lowerBound], as: UTF8.self)
+            let length = headers.split(separator: "\n").compactMap { line -> Int? in
+                let parts = line.split(separator: ":", maxSplits: 1)
+                return parts.count == 2 && parts[0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "content-length"
+                    ? Int(parts[1].trimmingCharacters(in: .whitespacesAndNewlines)) : nil
+            }.first ?? 0
+            let bodyStart = headerEnd.upperBound
+            guard bytes.distance(from: bodyStart, to: bytes.endIndex) >= length else {
+                guard bytes.count < 1_048_576, !isComplete else { connection.cancel(); return }
+                self.receiveRequest(on: connection, buffer: bytes)
+                return
+            }
+            let bodyEnd = bytes.index(bodyStart, offsetBy: length)
+            guard let payload = try? JSONDecoder().decode(Payload.self, from: bytes[bodyStart..<bodyEnd]) else {
+                connection.cancel(); return
+            }
+            connection.send(content: Data("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK".utf8), completion: .contentProcessed { _ in connection.cancel() })
+            self.onProblem?(payload)
+        }
+    }
 }
 
 enum ToolchainService {

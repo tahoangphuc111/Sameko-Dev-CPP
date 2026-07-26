@@ -18,6 +18,8 @@ struct SamekoMacApp: App {
                     .keyboardShortcut("n", modifiers: .command)
                 Button("Open Folder…") { model.openFolder() }
                     .keyboardShortcut("o", modifiers: .command)
+                Button("Save") { try? model.save() }
+                    .keyboardShortcut("s", modifiers: .command)
                 Button("Save As…") { model.saveAs() }
                     .keyboardShortcut("s", modifiers: [.command, .shift])
             }

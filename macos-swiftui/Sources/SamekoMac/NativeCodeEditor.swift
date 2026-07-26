@@ -20,7 +20,10 @@ struct NativeCodeEditor: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let textView = CompletionTextView()
+        // NSTextView's default frame is zero.  SwiftUI does not always assign
+        // it a usable document size through NSScrollView, leaving a blank code
+        // pane even though the model has source text.
+        let textView = CompletionTextView(frame: NSRect(x: 0, y: 0, width: 900, height: 600))
         textView.isRichText = false
         textView.isEditable = true
         textView.isSelectable = true
@@ -46,6 +49,8 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.insertionPointColor = accentColor
 
         let scroll = NSScrollView()
+        scroll.drawsBackground = true
+        scroll.backgroundColor = backgroundColor
         scroll.hasVerticalScroller = true
         scroll.hasHorizontalScroller = !wordWrap
         scroll.autohidesScrollers = true
@@ -67,7 +72,13 @@ struct NativeCodeEditor: NSViewRepresentable {
             textView.setSelectedRange(NSRange(location: min(selection.location, (source as NSString).length), length: 0))
             context.coordinator.highlight(textView)
         }
+        textView.backgroundColor = backgroundColor
+        textView.textColor = foregroundColor
+        textView.insertionPointColor = accentColor
         configure(textView)
+        if wordWrap {
+            textView.frame.size.width = max(1, scroll.contentSize.width)
+        }
         scroll.hasHorizontalScroller = !wordWrap
         scroll.verticalRulerView?.needsDisplay = true
     }
@@ -80,6 +91,7 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = !wordWrap
+        textView.autoresizingMask = wordWrap ? [.width] : []
         textView.textContainer?.lineFragmentPadding = 0
         textView.textContainer?.widthTracksTextView = wordWrap
         textView.textContainer?.containerSize = wordWrap
@@ -94,6 +106,9 @@ struct NativeCodeEditor: NSViewRepresentable {
             style.lineSpacing = 3
             return style
         }()
+        if textView.frame.width < 1 || textView.frame.height < 1 {
+            textView.frame = NSRect(x: 0, y: 0, width: 900, height: 600)
+        }
     }
 
     @MainActor

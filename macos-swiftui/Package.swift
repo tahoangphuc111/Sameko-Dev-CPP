@@ -8,6 +8,9 @@ let package = Package(
         .executable(name: "SamekoMac", targets: ["SamekoMac"]),
     ],
     targets: [
-        .executableTarget(name: "SamekoMac"),
+        .executableTarget(
+            name: "SamekoMac",
+            resources: [.copy("Resources")]
+        ),
     ]
 )

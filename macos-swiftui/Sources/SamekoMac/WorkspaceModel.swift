@@ -14,7 +14,7 @@ final class WorkspaceModel {
         var isDirty = false
     }
 
-    struct TestCase: Identifiable, Hashable {
+    struct TestCase: Identifiable, Hashable, Codable {
         let id = UUID()
         var name: String
         var input: String
@@ -40,6 +40,8 @@ final class WorkspaceModel {
     }
 
     var workspaceURL: URL?
+    var showWelcome = true
+    var canResumeSession = false
     var files: [SourceFile] = []
     var selectedFile: SourceFile?
     var source = """
@@ -53,12 +55,11 @@ final class WorkspaceModel {
     var output = "Ready. Open a C++ folder or create a new file."
     var isRunning = false
     var terminalInput = ""
-    var glassEnabled = true
-    var glassStyle: GlassStyle = .regular
     var tabs: [EditorTab] = [EditorTab(title: "untitled.cpp", source: "")]
     var activeTabID: EditorTab.ID?
     var showExplorer = true
     var showSplitEditor = false
+    var splitTabID: EditorTab.ID?
     var showTests = true
     var bottomPanel: BottomPanel = .tests
     var testInput = "3\n1 1 8\n1 2 8\n1 3 8"
@@ -106,17 +107,12 @@ final class WorkspaceModel {
 
     private var activeTask: Process?
     private var activeInput: FileHandle?
+    private var activeRunID: UUID?
     private var debugTask: Process?
     private var debugInput: FileHandle?
     private var autoSaveTask: Task<Void, Never>?
     private let clangd = ClangdService()
     private let workspaceWatcher = WorkspaceWatcher()
-
-    enum GlassStyle: String, CaseIterable, Identifiable {
-        case regular = "Regular"
-        case clear = "Clear"
-        var id: String { rawValue }
-    }
 
     enum BottomPanel: String, CaseIterable, Identifiable {
         case problems = "Problems"
@@ -192,8 +188,11 @@ final class WorkspaceModel {
         if !savedSnippets.isEmpty { snippets = savedSnippets }
         tabs[0].source = source
         activeTabID = tabs[0].id
-        clangd.onDiagnostics = { [weak self] values in
-            Task { @MainActor in self?.diagnostics = values.isEmpty ? ["No syntax problems found."] : values }
+        clangd.onDiagnostics = { [weak self] url, values in
+            Task { @MainActor in
+                guard self?.selectedFile?.id == url else { return }
+                self?.diagnostics = values.isEmpty ? ["No syntax problems found."] : values
+            }
         }
         let server = CompetitiveCompanionServer()
         server.onProblem = { [weak self] problem in
@@ -205,6 +204,7 @@ final class WorkspaceModel {
             Task { @MainActor in self?.workspaceDidChangeOnDisk() }
         }
         restoreSession()
+        canResumeSession = workspaceURL != nil
     }
 
     private var companionServer: CompetitiveCompanionServer?
@@ -223,6 +223,7 @@ final class WorkspaceModel {
 
     private func openWorkspace(at url: URL) {
         workspaceURL = url
+        showWelcome = false
         selectedFile = nil
         reloadFiles()
         workspaceWatcher.watch(url)
@@ -244,7 +245,7 @@ final class WorkspaceModel {
 
     func select(_ file: SourceFile) {
         let contents = (try? String(contentsOf: file.id, encoding: .utf8)) ?? ""
-        checkpoints = CheckpointStore.load(for: file.name)
+        checkpoints = CheckpointStore.load(for: file.id)
         output = "Opened \(file.name)"
         openTab(title: file.name, url: file.id, contents: contents)
     }
@@ -258,17 +259,33 @@ final class WorkspaceModel {
         }
         """
         output = "New unsaved file"
+        showWelcome = false
         openTab(title: "untitled-\(tabs.count + 1).cpp", url: nil, contents: contents)
     }
 
     func sourceDidChange() {
-        if let index = tabs.firstIndex(where: { $0.id == activeTabID }) {
-            tabs[index].source = source
-            tabs[index].isDirty = true
-        }
-        clangd.update(source: source)
-        scheduleAutoSave()
+        guard let activeTabID else { return }
+        sourceDidChange(for: activeTabID)
+    }
+
+    func sourceDidChange(for tabID: EditorTab.ID) {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }) else { return }
+        let tabSource = tabID == activeTabID ? source : tabs[index].source
+        tabs[index].source = tabSource
+        tabs[index].isDirty = true
+        if let url = tabs[index].url { clangd.update(document: url, source: tabSource) }
+        if tabID == activeTabID { scheduleAutoSave() }
         persistSession()
+    }
+
+    func source(for tabID: EditorTab.ID) -> String {
+        tabID == activeTabID ? source : (tabs.first(where: { $0.id == tabID })?.source ?? "")
+    }
+
+    func setSource(_ value: String, for tabID: EditorTab.ID) {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }) else { return }
+        tabs[index].source = value
+        if tabID == activeTabID { source = value }
     }
 
     func execute(_ command: PaletteCommand) {
@@ -291,7 +308,13 @@ final class WorkspaceModel {
     }
 
     func requestCompletions(line: Int, column: Int, reply: @escaping @Sendable ([ClangdCompletion]) -> Void) {
-        clangd.completions(line: line, column: column, source: source, reply: reply)
+        guard let activeTabID else { reply([]); return }
+        requestCompletions(for: activeTabID, line: line, column: column, reply: reply)
+    }
+
+    func requestCompletions(for tabID: EditorTab.ID, line: Int, column: Int, reply: @escaping @Sendable ([ClangdCompletion]) -> Void) {
+        guard let url = tabs.first(where: { $0.id == tabID })?.url else { reply([]); return }
+        clangd.completions(document: url, line: line, column: column, reply: reply)
     }
 
     func updateCursor(line: Int, column: Int) {
@@ -302,7 +325,8 @@ final class WorkspaceModel {
     func inspectSymbolAtCursor() {
         symbolInfo = "Looking up symbol…"
         bottomPanel = .problems
-        clangd.hover(line: cursorLine, column: cursorColumn) { [weak self] result in
+        guard let url = selectedFile?.id else { symbolInfo = "Save the file before inspecting symbols."; return }
+        clangd.hover(document: url, line: cursorLine, column: cursorColumn) { [weak self] result in
             Task { @MainActor in self?.symbolInfo = result ?? "No symbol information at the cursor." }
         }
     }
@@ -349,8 +373,13 @@ final class WorkspaceModel {
         guard let selectedFile else { return }
         do {
             _ = try FileManager.default.trashItem(at: selectedFile.id, resultingItemURL: nil)
+            clangd.close(document: selectedFile.id)
+            let closingTabs = tabs.filter { $0.url == selectedFile.id }
+            for tab in closingTabs { tabs.removeAll { $0.id == tab.id } }
             self.selectedFile = nil
             reloadFiles()
+            if tabs.isEmpty { newFile() }
+            else if let next = tabs.first { activateTab(next) }
             output = "Moved \(selectedFile.name) to Trash."
         } catch { output = "Could not move file to Trash: \(error.localizedDescription)" }
     }
@@ -403,8 +432,11 @@ final class WorkspaceModel {
             output = "clang-format is unavailable in the detected toolchain. Install LLVM to use native formatting."
             return
         }
+        let sourceFile = selectedFile?.id
         Task.detached { [weak self] in
-            let process = Process(); process.executableURL = formatter; process.arguments = ["-style=file"]
+            let process = Process(); process.executableURL = formatter
+            process.arguments = ["-style=file"] + (sourceFile.map { ["--assume-filename", $0.path] } ?? [])
+            process.currentDirectoryURL = sourceFile?.deletingLastPathComponent()
             let input = Pipe(); let response = Pipe(); process.standardInput = input; process.standardOutput = response; process.standardError = response
             do {
                 try process.run()
@@ -473,8 +505,8 @@ final class WorkspaceModel {
             throw CocoaError(.fileNoSuchFile)
         }
         try source.write(to: selectedFile.id, atomically: true, encoding: .utf8)
-        CheckpointStore.save(source: source, fileName: selectedFile.name)
-        checkpoints = CheckpointStore.load(for: selectedFile.name)
+        CheckpointStore.save(source: source, for: selectedFile.id)
+        checkpoints = CheckpointStore.load(for: selectedFile.id)
         updateActiveTab(title: selectedFile.name, url: selectedFile.id, contents: source, dirty: false)
         output = "Saved \(selectedFile.name)"
     }
@@ -494,11 +526,14 @@ final class WorkspaceModel {
             return
         }
 
+        let runID = UUID()
+        activeRunID = runID
         let executable = FileManager.default.temporaryDirectory
             .appendingPathComponent("sameko-\(UUID().uuidString)")
         let compiler = Process()
         compiler.executableURL = compilerURL
         compiler.arguments = compilerArguments(for: selectedFile.id, executable: executable)
+        compiler.currentDirectoryURL = workspaceURL ?? selectedFile.id.deletingLastPathComponent()
 
         let compilerPipe = Pipe()
         compiler.standardOutput = compilerPipe
@@ -512,6 +547,7 @@ final class WorkspaceModel {
             do {
                 try compiler.run()
                 compiler.waitUntilExit()
+                guard await self?.isRunActive(runID) == true else { return }
                 let buildLog = String(data: compilerPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
                 guard compiler.terminationStatus == 0 else {
                     await self?.finish("Build failed\\n\(buildLog)")
@@ -520,6 +556,7 @@ final class WorkspaceModel {
 
                 let runner = Process()
                 runner.executableURL = executable
+                runner.currentDirectoryURL = workspaceURL ?? selectedFile.id.deletingLastPathComponent()
                 let input = Pipe(), runPipe = Pipe()
                 runner.standardInput = input
                 runner.standardOutput = runPipe
@@ -534,6 +571,7 @@ final class WorkspaceModel {
                 await self?.startTerminalOutput()
                 try runner.run()
                 runner.waitUntilExit()
+                guard await self?.isRunActive(runID) == true else { return }
                 runPipe.fileHandleForReading.readabilityHandler = nil
                 let finalData = runPipe.fileHandleForReading.readDataToEndOfFile()
                 if let finalText = String(data: finalData, encoding: .utf8), !finalText.isEmpty { await self?.appendTerminalOutput(finalText) }
@@ -545,10 +583,13 @@ final class WorkspaceModel {
     }
 
     func stop() {
+        activeRunID = nil
         activeTask?.terminate()
         endDebugging()
         activeInput?.closeFile()
         activeInput = nil
+        isRunning = false
+        activeTask = nil
         output += "\nStopped."
     }
 
@@ -594,36 +635,46 @@ final class WorkspaceModel {
         do { try save() } catch { output = "Could not save: \(error.localizedDescription)"; return }
 
         let executable = FileManager.default.temporaryDirectory.appendingPathComponent("sameko-tests-\(UUID().uuidString)")
+        let runID = UUID()
+        activeRunID = runID
         isRunning = true
         output = "Building test cases…"
         Task.detached { [weak self] in
             let compiler = Process()
             compiler.executableURL = compilerURL
             compiler.arguments = await self?.compilerArguments(for: selectedFile.id, executable: executable) ?? []
+            compiler.currentDirectoryURL = await self?.workspaceURL ?? selectedFile.id.deletingLastPathComponent()
             let buildPipe = Pipe()
             compiler.standardOutput = buildPipe
             compiler.standardError = buildPipe
             do {
+                await self?.setActiveTask(compiler)
                 try compiler.run()
                 compiler.waitUntilExit()
+                guard await self?.isRunActive(runID) == true else { return }
                 let buildLog = String(data: buildPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
                 guard compiler.terminationStatus == 0 else { await self?.finish("Build failed\\n\(buildLog)"); return }
                 let cases = await self?.testCases ?? []
                 var results: [TestCase] = []
                 for test in cases {
+                    guard await self?.isRunActive(runID) == true else { return }
                     let process = Process()
                     process.executableURL = executable
+                    process.currentDirectoryURL = await self?.workspaceURL ?? selectedFile.id.deletingLastPathComponent()
                     let input = Pipe(); let response = Pipe()
                     process.standardInput = input; process.standardOutput = response; process.standardError = response
+                    await self?.setActiveTask(process)
                     try process.run()
                     input.fileHandleForWriting.write(test.input.data(using: .utf8) ?? Data())
                     input.fileHandleForWriting.closeFile()
-                    process.waitUntilExit()
+                    let completed = Self.waitForProcess(process, timeout: 5)
                     var result = test
                     result.actual = String(data: response.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                    result.passed = Self.normalized(result.actual) == Self.normalized(result.expected)
+                    result.passed = completed && process.terminationStatus == 0 && Self.normalized(result.actual) == Self.normalized(result.expected)
+                    if !completed { result.actual += "\n[Timed out after 5 seconds]" }
                     results.append(result)
                 }
+                guard await self?.isRunActive(runID) == true else { return }
                 await self?.finishTests(results)
             } catch { await self?.finish("Could not run tests: \(error.localizedDescription)") }
         }
@@ -641,11 +692,13 @@ final class WorkspaceModel {
             testCases.append(TestCase(name: resolvedName, input: testInput, expected: expectedOutput))
         }
         testCaseName = ""
+        persistTests()
         output = "Saved \(resolvedName)."
     }
 
     func deleteTestCase(_ test: TestCase) {
         testCases.removeAll { $0.id == test.id }
+        persistTests()
     }
 
     func insertSnippet(_ snippet: Snippet) {
@@ -680,12 +733,13 @@ final class WorkspaceModel {
 
     func restoreCheckpoint(_ value: String) {
         source = value
+        sourceDidChange()
         output = "Restored checkpoint. Save to write it to disk."
     }
 
     func clearCheckpoints() {
         guard let selectedFile else { return }
-        CheckpointStore.clear(for: selectedFile.name)
+        CheckpointStore.clear(for: selectedFile.id)
         checkpoints = []
     }
 
@@ -694,6 +748,7 @@ final class WorkspaceModel {
     func reloadActiveFileFromDisk() {
         guard let selectedFile else { return }
         source = (try? String(contentsOf: selectedFile.id, encoding: .utf8)) ?? source
+        updateActiveTab(title: selectedFile.name, url: selectedFile.id, contents: source, dirty: false)
         externalChangeNotice = nil
         output = "Reloaded \(selectedFile.name) from disk."
     }
@@ -713,12 +768,11 @@ final class WorkspaceModel {
             TestCase(name: "Test Case \(index + 1)", input: test.input, expected: test.output)
         }
         output = "Imported \(testCases.count) tests from \(problem.name)."
+        persistTests()
     }
 
     func persistPreferences() {
         let defaults = UserDefaults.standard
-        defaults.set(glassEnabled, forKey: "glassEnabled")
-        defaults.set(glassStyle.rawValue, forKey: "glassStyle")
         defaults.set(cppStandard, forKey: "cppStandard")
         defaults.set(optimization, forKey: "optimization")
         defaults.set(warningsEnabled, forKey: "warningsEnabled")
@@ -734,8 +788,6 @@ final class WorkspaceModel {
 
     private func loadPreferences() {
         let defaults = UserDefaults.standard
-        if defaults.object(forKey: "glassEnabled") != nil { glassEnabled = defaults.bool(forKey: "glassEnabled") }
-        glassStyle = GlassStyle(rawValue: defaults.string(forKey: "glassStyle") ?? "") ?? .regular
         cppStandard = defaults.string(forKey: "cppStandard") ?? cppStandard
         optimization = defaults.string(forKey: "optimization") ?? optimization
         if defaults.object(forKey: "warningsEnabled") != nil { warningsEnabled = defaults.bool(forKey: "warningsEnabled") }
@@ -760,6 +812,12 @@ final class WorkspaceModel {
         persistSession()
     }
 
+    func resumeLastSession() {
+        guard canResumeSession else { return }
+        showWelcome = false
+        output = workspaceURL.map { "Resumed \($0.lastPathComponent)." } ?? "Resumed previous session."
+    }
+
     func activateTab(_ tab: EditorTab) {
         if let current = tabs.firstIndex(where: { $0.id == activeTabID }) { tabs[current].source = source }
         guard let index = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
@@ -767,7 +825,8 @@ final class WorkspaceModel {
         source = tabs[index].source
         if let url = tabs[index].url {
             selectedFile = SourceFile(id: url)
-            checkpoints = CheckpointStore.load(for: url.lastPathComponent)
+            checkpoints = CheckpointStore.load(for: url)
+            testCases = TestCaseStore.load(for: url)
             clangd.open(document: url, source: source, root: workspaceURL)
         } else {
             selectedFile = nil
@@ -787,6 +846,8 @@ final class WorkspaceModel {
 
     func closeTab(_ tab: EditorTab) {
         let closingIndex = tabs.firstIndex(where: { $0.id == tab.id }) ?? 0
+        if let url = tab.url { clangd.close(document: url) }
+        if splitTabID == tab.id { splitTabID = nil }
         tabs.removeAll { $0.id == tab.id }
         if tabs.isEmpty { newFile(); return }
         if activeTabID == tab.id { activateTab(tabs[min(closingIndex, tabs.count - 1)]) }
@@ -854,6 +915,7 @@ final class WorkspaceModel {
         appendTerminalOutput("\nProcess finished (exit code \(exitCode)).")
         isRunning = false
         activeTask = nil
+        activeRunID = nil
         activeInput?.closeFile()
         activeInput = nil
     }
@@ -879,12 +941,14 @@ final class WorkspaceModel {
         output = message
         isRunning = false
         activeTask = nil
+        activeRunID = nil
         activeInput?.closeFile()
         activeInput = nil
     }
 
     private func applyFormattedSource(_ formatted: String) {
         source = formatted
+        sourceDidChange()
         output = "Formatted source."
     }
 
@@ -914,10 +978,30 @@ final class WorkspaceModel {
 
     private func finishTests(_ results: [TestCase]) {
         testCases = results
+        persistTests()
         let passed = results.filter { $0.passed == true }.count
         output = "\(passed)/\(results.count) test cases passed."
         isRunning = false
         activeTask = nil
+        activeRunID = nil
+    }
+
+    private func persistTests() {
+        guard let file = selectedFile?.id else { return }
+        TestCaseStore.save(testCases, for: file)
+    }
+
+    private func isRunActive(_ id: UUID) -> Bool { activeRunID == id && isRunning }
+
+    nonisolated private static func waitForProcess(_ process: Process, timeout: TimeInterval) -> Bool {
+        if !process.isRunning { return true }
+        let completed = DispatchSemaphore(value: 0)
+        process.terminationHandler = { _ in completed.signal() }
+        if !process.isRunning { return true }
+        guard completed.wait(timeout: .now() + timeout) == .timedOut else { return true }
+        process.terminate()
+        _ = completed.wait(timeout: .now() + 1)
+        return false
     }
 
     nonisolated private static func normalized(_ value: String) -> String {
