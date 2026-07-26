@@ -1,6 +1,6 @@
 import Foundation
 
-struct ClangdCompletion: Identifiable, Hashable {
+struct ClangdCompletion: Identifiable, Hashable, Sendable {
     let label: String
     let insertText: String
     var id: String { "\(label)\u{0}\(insertText)" }
@@ -43,7 +43,7 @@ final class ClangdService: @unchecked Sendable {
         }
     }
 
-    func completions(line: Int, column: Int, source: String, reply: @escaping ([ClangdCompletion]) -> Void) {
+    func completions(line: Int, column: Int, source: String, reply: @escaping @Sendable ([ClangdCompletion]) -> Void) {
         queue.async { [weak self] in
             guard let self, self.isReady, let url = self.documentURL else { reply([]); return }
             self.request("textDocument/completion", [
@@ -63,7 +63,7 @@ final class ClangdService: @unchecked Sendable {
         }
     }
 
-    func hover(line: Int, column: Int, reply: @escaping (String?) -> Void) {
+    func hover(line: Int, column: Int, reply: @escaping @Sendable (String?) -> Void) {
         queue.async { [weak self] in
             guard let self, self.isReady, let url = self.documentURL else { reply(nil); return }
             self.request("textDocument/hover", [
@@ -88,9 +88,13 @@ final class ClangdService: @unchecked Sendable {
         task.standardInput = stdin; task.standardOutput = stdout; task.standardError = stderr
         stdout.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
-            if !data.isEmpty { self?.queue.async { self?.receive(data) } }
+            guard !data.isEmpty, let service = self else { return }
+            service.queue.async { service.receive(data) }
         }
-        task.terminationHandler = { [weak self] _ in self?.queue.async { self?.reset() } }
+        task.terminationHandler = { [weak self] _ in
+            guard let service = self else { return }
+            service.queue.async { service.reset() }
+        }
         do {
             try task.run()
             process = task; input = stdin.fileHandleForWriting

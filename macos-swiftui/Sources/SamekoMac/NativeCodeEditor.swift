@@ -77,8 +77,8 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.textContainer?.lineFragmentPadding = 0
         textView.textContainer?.widthTracksTextView = wordWrap
         textView.textContainer?.containerSize = wordWrap
-            ? NSSize(width: 0, height: .greatestFiniteMagnitude)
-            : NSSize(width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+            ? NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+            : NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         let tabWidth = font.maximumAdvancement.width * CGFloat(max(1, tabSize))
         let tabs = NSTextTab(textAlignment: .left, location: tabWidth, options: [:])
         textView.defaultParagraphStyle = {
@@ -90,6 +90,7 @@ struct NativeCodeEditor: NSViewRepresentable {
         }()
     }
 
+    @MainActor
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: NativeCodeEditor
         private var isHighlighting = false

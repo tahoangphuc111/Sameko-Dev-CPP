@@ -281,7 +281,7 @@ final class WorkspaceModel {
         }
     }
 
-    func requestCompletions(line: Int, column: Int, reply: @escaping ([ClangdCompletion]) -> Void) {
+    func requestCompletions(line: Int, column: Int, reply: @escaping @Sendable ([ClangdCompletion]) -> Void) {
         clangd.completions(line: line, column: column, source: source, reply: reply)
     }
 
