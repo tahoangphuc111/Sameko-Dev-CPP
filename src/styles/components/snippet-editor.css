@@ -37,8 +37,8 @@
     background: var(--bg-glass-heavy, #ffffff);
     border-radius: 20px;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
-    width: 90%;
-    max-width: 700px;
+    width: 95%;
+    max-width: 900px;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
@@ -137,11 +137,103 @@
 }
 
 #snippet-content-editor {
+    height: 420px;
     border-radius: 12px;
     overflow: hidden;
     border: 2px solid var(--border, #cceeff);
     background: #1a2530 !important;
     /* Keep editor dark for contrast */
+}
+
+.snippet-editor-layout {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+}
+
+.snippet-editor-left {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.snippet-editor-left .snippet-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.snippet-editor-left .snippet-field label {
+    margin-bottom: 8px;
+}
+
+.snippet-editor-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.snippet-editor-right .snippet-field {
+    margin-bottom: 0;
+}
+
+.tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tips-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tips-list li code {
+    flex-shrink: 0;
+    background: var(--bg-ocean-light, #eef4f8);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent, #3a7ca5);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+    font-weight: 600;
+    border: 1px solid var(--border, #cceeff);
+}
+
+.tips-list li span {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.example-item {
+    margin-bottom: 8px;
+}
+
+.example-item:last-child {
+    margin-bottom: 0;
+}
+
+.example-title {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .snippet-editor-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    #snippet-content-editor {
+        height: 300px;
+    }
 }
 
 .snippet-editor-footer {
@@ -154,7 +246,7 @@
 }
 
 .snippet-tips {
-    margin-top: 16px;
+    margin-top: 0;
     padding: 12px;
     background: rgba(var(--accent-rgb, 136, 201, 234), 0.05);
     border: 1px dashed var(--border, #cceeff);

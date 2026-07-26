@@ -3275,15 +3275,17 @@ function applyLiquidGlassSettings(appearanceOverride = null) {
     document.body.dataset.glassMode = enabled ? mode : 'off';
 
     const filterValues = {
-        subtle: { blur: '0.10', frequency: '0.018 0.034', scale: '2.2', saturation: '1.12', surface: '1.8', constant: '0.34', exponent: '16' },
-        balanced: { blur: '0.16', frequency: '0.014 0.028', scale: '4.2', saturation: '1.22', surface: '2.8', constant: '0.48', exponent: '22' },
-        strong: { blur: '0.22', frequency: '0.010 0.022', scale: '6.4', saturation: '1.36', surface: '3.8', constant: '0.58', exponent: '28' }
+        subtle: { blur: '0.10', frequency: '0.016 0.030', scale: '2.0', saturation: '1.15', surface: '1.8', constant: '0.36', exponent: '18', redShift: '-1.0', blueShift: '1.0' },
+        balanced: { blur: '0.14', frequency: '0.012 0.024', scale: '3.6', saturation: '1.25', surface: '2.6', constant: '0.46', exponent: '24', redShift: '-1.8', blueShift: '1.8' },
+        strong: { blur: '0.18', frequency: '0.009 0.018', scale: '5.2', saturation: '1.35', surface: '3.4', constant: '0.56', exponent: '30', redShift: '-2.5', blueShift: '2.5' }
     };
     const values = filterValues[mode] || filterValues.balanced;
     const setAttr = (id, name, value) => document.getElementById(id)?.setAttribute(name, value);
     setAttr('glass-filter-soften', 'stdDeviation', values.blur);
     setAttr('glass-filter-map', 'baseFrequency', values.frequency);
     setAttr('glass-filter-displace', 'scale', values.scale);
+    setAttr('red-shift', 'dx', values.redShift);
+    setAttr('blue-shift', 'dx', values.blueShift);
     setAttr('glass-filter-color', 'values', values.saturation);
     setAttr('glass-filter-specular', 'surfaceScale', values.surface);
     setAttr('glass-filter-specular', 'specularConstant', values.constant);
@@ -5031,7 +5033,13 @@ function renderTabs() {
     setTimeout(() => {
         const focusedTab = c.querySelector('.tab.focused') || c.querySelector('.tab.active');
         if (focusedTab) {
-            focusedTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            const containerRect = c.getBoundingClientRect();
+            const tabRect = focusedTab.getBoundingClientRect();
+            const scrollOffset = (tabRect.left + tabRect.width / 2) - (containerRect.left + containerRect.width / 2);
+            c.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+        }
+        if (window.scrollX !== 0 || window.scrollY !== 0) {
+            window.scrollTo(0, 0);
         }
     }, 10);
 }

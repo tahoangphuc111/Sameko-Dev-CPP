@@ -33,7 +33,7 @@
     --glass-panel-bg-strong: rgba(238, 246, 255, 0.34);
     --glass-edge: rgba(255, 255, 255, 0.72);
     --glass-edge-soft: rgba(255, 255, 255, 0.28);
-    --glass-rim-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(255, 255, 255, 0.18), inset 0 0 18px rgba(255, 255, 255, 0.16), 0 10px 34px rgba(6, 12, 24, 0.16);
+    --glass-rim-shadow: inset 10px 10px 20px rgba(153, 192, 255, 0.12), inset 2px 2px 5px rgba(195, 218, 255, 0.25), inset -10px -10px 20px rgba(229, 253, 190, 0.12), inset -2px -2px 30px rgba(247, 255, 226, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 34px rgba(6, 12, 24, 0.16);
     --glass-text: #17324a;
     --glass-text-muted: #375e7a;
 
@@ -284,6 +284,9 @@ body.customizer-open::before {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    width: 100vw;
+    max-width: 100vw;
+    overflow: hidden !important;
     background: transparent;
     /* Remove heavy radial gradient */
     backdrop-filter: none;
@@ -353,7 +356,43 @@ body.customizer-open::before {
     box-shadow: var(--glass-rim-shadow) !important;
     color: var(--glass-text);
     transform: translateZ(0);
-    contain: paint;
+    contain: layout paint style;
+    position: relative;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* Liquid Glass Chromatic Aberration & Prismatic Dispersion Edge Glow */
+.liquidglass::after,
+.header-bar::after,
+.panel-head::after,
+.card-panel::after,
+.settings-popup::after,
+.fullscreen-popup::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(135deg, 
+        rgba(255, 90, 140, 0.45) 0%, 
+        rgba(255, 200, 80, 0.35) 25%, 
+        rgba(80, 230, 255, 0.45) 50%, 
+        rgba(170, 100, 255, 0.4) 75%, 
+        rgba(255, 110, 190, 0.45) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.82;
+    z-index: 2;
+    transition: opacity 0.3s ease;
+}
+
+body.glass-disabled .liquidglass::after,
+body.glass-disabled .header-bar::after,
+body.glass-disabled .card-panel::after {
+    display: none !important;
 }
 
 .liquidglass-light,
@@ -664,6 +703,7 @@ body.window-resizing {
     overflow: hidden;
     padding-left: 10px;
     /* Inherit drag from header-bar, empty space is draggable */
+    min-width: 0;
 }
 
 .tabs-container {
@@ -674,6 +714,7 @@ body.window-resizing {
     /* Inherit drag from parent, empty space remains draggable */
     pointer-events: none;
     /* Allow drag on empty space */
+    min-width: 0;
 }
 
 .tabs-container>* {

@@ -42,6 +42,9 @@ window.editSnippet = function (index) {
     if (snippetEditor) snippetEditor.setValue(snippet.content);
 
     document.getElementById('snippet-editor-modal').classList.add('active');
+    if (snippetEditor) {
+        setTimeout(() => snippetEditor.layout(), 100);
+    }
 };
 
 window.addNewSnippet = function () {
@@ -54,6 +57,9 @@ window.addNewSnippet = function () {
     if (snippetEditor) snippetEditor.setValue('');
 
     document.getElementById('snippet-editor-modal').classList.add('active');
+    if (snippetEditor) {
+        setTimeout(() => snippetEditor.layout(), 100);
+    }
 };
 
 function closeSnippetEditor() {

@@ -51,6 +51,12 @@
     --radius-sm: 12px;
 }
 
+html {
+    overflow: hidden !important;
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+
 body {
     font-family: 'Nunito', 'Segoe UI', sans-serif;
     background-color: var(--bg-ocean-light);
@@ -58,7 +64,9 @@ body {
     background-image: none;
     color: var(--text-primary);
     height: 100vh;
-    overflow: hidden;
+    width: 100vw;
+    max-width: 100vw;
+    overflow: hidden !important;
     font-size: 14px;
     user-select: none;
     position: relative;
@@ -253,6 +261,7 @@ body::after {
     overflow: hidden;
     -webkit-app-region: drag;
     padding-left: 10px;
+    min-width: 0;
 }
 
 .tabs-container {
@@ -261,6 +270,7 @@ body::after {
     overflow-x: auto;
     padding: 4px 0;
     -webkit-app-region: no-drag;
+    min-width: 0;
 }
 
 .tabs-container::-webkit-scrollbar {

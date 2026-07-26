@@ -265,6 +265,9 @@ function createMainWindow() {
         titleBarStyle: isMac ? 'hiddenInset' : undefined,
         titleBarOverlay: isMac ? { height: 58, color: '#00000000', symbolColor: '#ffffff' } : undefined,
         trafficLightPosition: isMac ? { x: 18, y: 20 } : undefined,
+        vibrancy: isMac ? 'fullscreen-ui' : undefined,
+        visualEffectState: isMac ? 'active' : undefined,
+        backgroundMaterial: !isMac ? 'acrylic' : undefined,
         show: false,
         webPreferences: {
             nodeIntegration: false,
@@ -274,7 +277,8 @@ function createMainWindow() {
         icon: isMac
             ? path.join(appRoot, 'src', 'assets', 'icon.icns')
             : path.join(appRoot, 'src', 'assets', 'icon.ico'),
-        backgroundColor: WINDOW.BACKGROUND_COLOR
+        transparent: true,
+        backgroundColor: '#00000000'
     };
 
     mainWindow = new BrowserWindow(windowOptions);
