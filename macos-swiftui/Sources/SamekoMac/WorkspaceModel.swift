@@ -979,9 +979,13 @@ final class WorkspaceModel {
 
     private func finishTests(_ results: [TestCase]) {
         testCases = results
+        actualOutput = results.enumerated().map { index, test in
+            "Test \(index + 1):\n\(test.actual.isEmpty ? "(no output)" : test.actual)"
+        }.joined(separator: "\n\n")
         persistTests()
         let passed = results.filter { $0.passed == true }.count
         output = "\(passed)/\(results.count) test cases passed."
+        bottomPanel = .tests
         isRunning = false
         activeTask = nil
         activeRunID = nil

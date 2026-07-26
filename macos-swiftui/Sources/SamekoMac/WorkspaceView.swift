@@ -163,7 +163,7 @@ private struct AppHeader: View {
     @Bindable var model: WorkspaceModel
     var body: some View {
         HStack(spacing: 8) {
-            Text("C++").font(.caption.weight(.heavy)).foregroundStyle(.black)
+            Text("C++").font(.caption.weight(.heavy)).foregroundStyle(.white)
                 .frame(width: 38, height: 26).background(Color.green).clipShape(Capsule())
             Menu("File") { Button("New File", action: model.newFile); Button("New File in Workspace", action: model.createFileInWorkspace); Button("New Folder", action: model.createFolderInWorkspace); Divider(); Button("Save") { try? model.save() }; Button("Save As…", action: model.saveAs); Button("Open Folder…", action: model.openFolder); Divider(); Button("Show Welcome") { model.showWelcome = true } }
             Menu("Edit") { Button("Save") { try? model.save() }; Button("Format Source", action: model.formatSource) }
@@ -338,34 +338,58 @@ private struct CodeEditor: View {
 private struct TestRail: View {
     @Bindable var model: WorkspaceModel
     var body: some View {
-        VStack(spacing: 8) {
-            MiniPanel(title: "INPUT", text: $model.testInput)
-            MiniPanel(title: "EXPECTED", text: $model.expectedOutput)
+        VStack(spacing: 7) {
+            MiniPanel(title: "INPUT", subtitle: "stdin", text: $model.testInput, accent: .blue)
+            MiniPanel(title: "OUTPUT", subtitle: "program result", text: $model.actualOutput, accent: .orange, isEditable: false)
+            MiniPanel(title: "EXPECTED", subtitle: "judge answer", text: $model.expectedOutput, accent: .green)
             HStack(spacing: 6) {
                 TextField("Test case name", text: $model.testCaseName).textFieldStyle(.roundedBorder)
                 Button("Save", action: model.saveTestCase).buttonStyle(.borderedProminent).tint(Color.green)
             }
         }
-        .padding(6).background(.ultraThinMaterial).clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding(7).background(Color(nsColor: .windowBackgroundColor).opacity(0.90)).clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay { RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.10)) }
     }
 }
 
 private struct MiniPanel: View {
-    let title: String; @Binding var text: String
+    let title: String
+    let subtitle: String
+    @Binding var text: String
+    let accent: Color
+    var isEditable = true
     var body: some View {
         VStack(spacing: 0) {
-            HStack { Text(title).font(.caption2.weight(.bold)); Spacer(); Image(systemName: "circle.fill").font(.system(size: 7)).foregroundStyle(Color.green) }
-                .padding(8)
+            HStack(spacing: 6) {
+                Circle().fill(accent).frame(width: 7, height: 7)
+                Text(title).font(.caption2.weight(.bold))
+                Text(subtitle).font(.caption2).foregroundStyle(.secondary)
+                Spacer()
+                if isEditable { Image(systemName: "pencil.line").font(.caption2).foregroundStyle(.secondary) }
+            }
+            .padding(.horizontal, 9).padding(.vertical, 8)
             Divider()
-            TextEditor(text: $text)
-                .font(.system(.caption, design: .monospaced))
-                .textEditorStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .foregroundStyle(.primary)
-                .focusable(true)
-                .padding(8)
+            if isEditable {
+                TextEditor(text: $text)
+                    .font(.system(.caption, design: .monospaced))
+                    .textEditorStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .foregroundStyle(.primary)
+                    .focusable(true)
+                    .padding(8)
+            } else {
+                ScrollView {
+                    Text(text.isEmpty ? "Run a test to see program output." : text)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(text.isEmpty ? .secondary : .primary)
+                        .textSelection(.enabled)
+                        .padding(9)
+                }
+            }
         }
-        .background(Color.black.opacity(0.36))
+        .frame(maxHeight: .infinity)
+        .background(Color.black.opacity(0.30))
         .clipShape(RoundedRectangle(cornerRadius: 11))
     }
 }
