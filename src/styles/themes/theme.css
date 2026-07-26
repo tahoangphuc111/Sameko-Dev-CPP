@@ -1313,17 +1313,18 @@ body.is-mac .header-bar,
 
 /* Dialogs / Dropdowns */
 .dropdown {
-    background: var(--bg-panel, #f5faff);
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    padding: 8px;
+    background: var(--glass-panel-bg-strong, rgba(238, 246, 255, 0.32)) !important;
+    border: 1px solid var(--glass-edge-soft, rgba(255, 255, 255, 0.28)) !important;
+    border-radius: 14px !important;
+    box-shadow: var(--glass-rim-shadow, 0 10px 30px rgba(0, 0, 0, 0.18)) !important;
+    padding: 6px !important;
     display: none;
-    position: absolute;
-    top: 100%;
+    position: absolute !important;
     margin-top: 4px;
-    min-width: 180px;
-    z-index: 1000;
+    min-width: 180px !important;
+    width: max-content !important;
+    max-width: 280px !important;
+    z-index: 1000 !important;
 }
 
 .dropdown.show {

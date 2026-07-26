@@ -7,12 +7,12 @@
  */
 
 :root {
-    --glass-frost: 0.18;
+    --glass-frost: 0.14;
     --glass-saturation: 1.25;
-    --glass-blur: 10px;
-    --glass-blur-light: 8px;
-    --glass-panel-bg: rgba(238, 246, 255, 0.20);
-    --glass-panel-bg-strong: rgba(238, 246, 255, 0.32);
+    --glass-blur: 8px;
+    --glass-blur-light: 6px;
+    --glass-panel-bg: rgba(238, 246, 255, 0.14);
+    --glass-panel-bg-strong: rgba(238, 246, 255, 0.26);
     --glass-edge-soft: rgba(255, 255, 255, 0.28);
     --glass-rim-shadow: 
         inset 10px 10px 20px rgba(153, 192, 255, 0.12), 
