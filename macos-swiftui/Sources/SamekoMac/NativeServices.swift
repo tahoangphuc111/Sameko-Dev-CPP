@@ -113,9 +113,9 @@ final class WorkspaceWatcher {
 }
 
 /// Receives standard Competitive Companion JSON posts at localhost:10043.
-final class CompetitiveCompanionServer {
-    struct Payload: Codable {
-        struct Test: Codable { let input: String; let output: String }
+final class CompetitiveCompanionServer: @unchecked Sendable {
+    struct Payload: Codable, Sendable {
+        struct Test: Codable, Sendable { let input: String; let output: String }
         let name: String
         let url: String?
         let tests: [Test]
@@ -129,15 +129,16 @@ final class CompetitiveCompanionServer {
         let listener = try NWListener(using: .tcp, on: 10043)
         listener.newConnectionHandler = { [weak self] connection in
             connection.start(queue: .global(qos: .utility))
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 1_048_576) { data, _, _, _ in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 1_048_576) { [weak self] data, _, _, _ in
                 defer { connection.cancel() }
+                guard let server = self else { return }
                 guard let data,
                       let request = String(data: data, encoding: .utf8),
                       let separator = request.range(of: "\r\n\r\n") else { return }
                 let body = Data(request[separator.upperBound...].utf8)
                 guard let payload = try? JSONDecoder().decode(Payload.self, from: body) else { return }
                 connection.send(content: Data("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK".utf8), completion: .contentProcessed { _ in })
-                self?.onProblem?(payload)
+                server.onProblem?(payload)
             }
         }
         listener.start(queue: .global(qos: .utility))
