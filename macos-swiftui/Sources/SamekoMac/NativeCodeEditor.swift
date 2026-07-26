@@ -66,6 +66,7 @@ struct NativeCodeEditor: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let textView = scroll.documentView as? NSTextView else { return }
+        context.coordinator.parent = self
         if textView.string != source {
             let selection = textView.selectedRange()
             textView.string = source
@@ -76,6 +77,7 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.textColor = foregroundColor
         textView.insertionPointColor = accentColor
         configure(textView)
+        context.coordinator.highlight(textView)
         if wordWrap {
             textView.frame.size.width = max(1, scroll.contentSize.width)
         }
@@ -106,6 +108,11 @@ struct NativeCodeEditor: NSViewRepresentable {
             style.lineSpacing = 3
             return style
         }()
+        textView.typingAttributes = [
+            .font: font,
+            .foregroundColor: foregroundColor,
+            .paragraphStyle: textView.defaultParagraphStyle ?? NSParagraphStyle.default
+        ]
         if textView.frame.width < 1 || textView.frame.height < 1 {
             textView.frame = NSRect(x: 0, y: 0, width: 900, height: 600)
         }
@@ -150,7 +157,11 @@ struct NativeCodeEditor: NSViewRepresentable {
             storage.beginEditing()
             storage.setAttributes([
                 .font: textView.font ?? NSFont.monospacedSystemFont(ofSize: 14, weight: .regular),
-                .foregroundColor: textView.textColor ?? NSColor.labelColor,
+                // NSTextView may return nil for textColor after SwiftUI/AppKit
+                // appearance changes. Falling back to labelColor makes code
+                // black under a dark custom editor background, so always use
+                // the palette value supplied by the workspace.
+                .foregroundColor: parent.foregroundColor,
                 .paragraphStyle: textView.defaultParagraphStyle ?? NSParagraphStyle.default
             ], range: range)
             apply("//.*|/\\*[\\s\\S]*?\\*/", color: .systemGreen, in: storage, range: range)
