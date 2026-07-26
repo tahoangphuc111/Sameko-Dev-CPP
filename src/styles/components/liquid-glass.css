@@ -1,0 +1,162 @@
+/**
+ * Apple Liquid Glass Design System
+ * 
+ * Implements Apple's WWDC Liquid Glass design language:
+ * - Snell's Law optical refraction simulation
+ * - Chromatic Aberration RGB subpixel dispersion
+ * - Multi-layer Fresnel internal corner light highlights
+ * - Hardware-accelerated GPU layer compositing
+ */
+
+:root {
+    --glass-frost: 0.18;
+    --glass-saturation: 1.28;
+    --filter-id: url(#glass-filter);
+    --glass-blur: 14px;
+    --glass-blur-light: 10px;
+    --glass-highlight-opacity: 0.72;
+    --glass-panel-bg: rgba(238, 246, 255, 0.22);
+    --glass-panel-bg-strong: rgba(238, 246, 255, 0.34);
+    --glass-edge: rgba(255, 255, 255, 0.72);
+    --glass-edge-soft: rgba(255, 255, 255, 0.28);
+    --glass-rim-shadow: 
+        inset 10px 10px 20px rgba(153, 192, 255, 0.12), 
+        inset 2px 2px 5px rgba(195, 218, 255, 0.25), 
+        inset -10px -10px 20px rgba(229, 253, 190, 0.12), 
+        inset -2px -2px 30px rgba(247, 255, 226, 0.2), 
+        inset 0 1px 0 rgba(255, 255, 255, 0.8), 
+        0 10px 34px rgba(6, 12, 24, 0.16);
+    --glass-text: #17324a;
+    --glass-text-muted: #375e7a;
+}
+
+/* ============================================================================
+ * LIQUID GLASS PANEL BASE STYLES & GPU ACCELERATION
+ * ============================================================================ */
+.liquidglass,
+.header-bar,
+.status-bar,
+.panel-head,
+.terminal-section,
+.problems-panel,
+.editor-section,
+.dropdown,
+.update-popup,
+.cc-popup,
+.color-picker-popup,
+.fullscreen-popup,
+.local-history-modal,
+.snippet-editor-popup,
+.io-section.three-card-io .card-panel,
+.welcome-box,
+.note-dialog,
+.settings-popup,
+.tc6-container,
+.explorer-sidebar,
+.explorer-header,
+.context-menu,
+.dialog-overlay .dialog {
+    background: var(--glass-panel-bg) !important;
+    -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
+    backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.28)) blur(var(--glass-blur, 14px)) !important;
+    border-color: var(--glass-edge-soft) !important;
+    box-shadow: var(--glass-rim-shadow) !important;
+    color: var(--glass-text);
+    transform: translateZ(0);
+    contain: layout paint style;
+    position: relative;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* ============================================================================
+ * CHROMATIC ABERRATION PRISMATIC RAINBOW EDGE RIM
+ * ============================================================================ */
+.liquidglass::after,
+.header-bar::after,
+.panel-head::after,
+.card-panel::after,
+.settings-popup::after,
+.fullscreen-popup::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(135deg, 
+        rgba(255, 90, 140, 0.45) 0%, 
+        rgba(255, 200, 80, 0.35) 25%, 
+        rgba(80, 230, 255, 0.45) 50%, 
+        rgba(170, 100, 255, 0.4) 75%, 
+        rgba(255, 110, 190, 0.45) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.82;
+    z-index: 2;
+    transition: opacity 0.3s ease;
+}
+
+body.glass-disabled .liquidglass::after,
+body.glass-disabled .header-bar::after,
+body.glass-disabled .card-panel::after {
+    display: none !important;
+}
+
+/* ============================================================================
+ * NO REFRACTION & PERFORMANCE FALLBACK MODES
+ * ============================================================================ */
+body.glass-no-refraction .liquidglass,
+body.glass-no-refraction .header-bar,
+body.glass-no-refraction .status-bar,
+body.glass-no-refraction .panel-head,
+body.glass-no-refraction .terminal-section,
+body.glass-no-refraction .problems-panel,
+body.glass-no-refraction .editor-section,
+body.glass-no-refraction .dropdown,
+body.glass-no-refraction .update-popup,
+body.glass-no-refraction .cc-popup,
+body.glass-no-refraction .color-picker-popup,
+body.glass-no-refraction .fullscreen-popup,
+body.glass-no-refraction .local-history-modal,
+body.glass-no-refraction .snippet-editor-popup,
+body.glass-no-refraction .io-section.three-card-io .card-panel,
+body.glass-no-refraction .welcome-box,
+body.glass-no-refraction .note-dialog,
+body.glass-no-refraction .settings-popup,
+body.glass-no-refraction .tc6-container,
+body.glass-no-refraction .explorer-sidebar,
+body.glass-no-refraction .explorer-header,
+body.glass-no-refraction .context-menu,
+body.glass-no-refraction .dialog-overlay .dialog {
+    -webkit-backdrop-filter: blur(var(--glass-blur, 14px)) saturate(var(--glass-saturation, 1.28)) !important;
+    backdrop-filter: blur(var(--glass-blur, 14px)) saturate(var(--glass-saturation, 1.28)) !important;
+}
+
+body.glass-disabled .liquidglass,
+body.glass-disabled .header-bar,
+body.glass-disabled .status-bar,
+body.glass-disabled .panel-head,
+body.glass-disabled .terminal-section,
+body.glass-disabled .problems-panel,
+body.glass-disabled .editor-section,
+body.glass-disabled .dropdown,
+body.glass-disabled .update-popup,
+body.glass-disabled .cc-popup,
+body.glass-disabled .color-picker-popup,
+body.glass-disabled .fullscreen-popup,
+body.glass-disabled .local-history-modal,
+body.glass-disabled .snippet-editor-popup,
+body.glass-disabled .io-section.three-card-io .card-panel,
+body.glass-disabled .welcome-box,
+body.glass-disabled .note-dialog,
+body.glass-disabled .settings-popup,
+body.glass-disabled .tc6-container,
+body.glass-disabled .explorer-sidebar,
+body.glass-disabled .explorer-header,
+body.glass-disabled .context-menu,
+body.glass-disabled .dialog-overlay .dialog {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
