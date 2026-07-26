@@ -56,6 +56,7 @@ struct NativeCodeEditor: NSViewRepresentable {
         scroll.verticalRulerView = LineNumberRulerView(textView: textView)
         scroll.hasVerticalRuler = true
         scroll.rulersVisible = true
+        context.coordinator.applySyntaxHighlighting(textView)
         context.coordinator.updateCursor(textView)
         return scroll
     }
@@ -72,6 +73,7 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.backgroundColor = backgroundColor
         textView.textColor = foregroundColor
         textView.insertionPointColor = accentColor
+        context.coordinator.applySyntaxHighlighting(textView)
         if wordWrap {
             textView.frame.size.width = max(1, scroll.contentSize.width)
         }
@@ -128,6 +130,7 @@ struct NativeCodeEditor: NSViewRepresentable {
             guard let textView = notification.object as? NSTextView else { return }
             parent.source = textView.string
             parent.onSourceChange()
+            applySyntaxHighlighting(textView)
             updateCursor(textView)
         }
 
@@ -142,6 +145,31 @@ struct NativeCodeEditor: NSViewRepresentable {
             let column = (prefix.lastIndex(of: "\n").map { prefix.distance(from: $0, to: prefix.endIndex) } ?? prefix.count + 1)
             parent.cursorPosition = "Ln \(line), Col \(column)"
             parent.onCursorChange(line - 1, column - 1)
+        }
+
+        /// Uses layout-manager temporary attributes rather than mutating
+        /// NSTextStorage. Temporary attributes are display-only, so SwiftUI's
+        /// update cycle cannot invalidate the underlying TextKit glyph store.
+        func applySyntaxHighlighting(_ textView: NSTextView) {
+            guard let layoutManager = textView.layoutManager else { return }
+            let source = textView.string
+            let fullRange = NSRange(location: 0, length: (source as NSString).length)
+            layoutManager.removeTemporaryAttribute(.foregroundColor, forCharacterRange: fullRange)
+            apply("//.*|/\\*[\\s\\S]*?\\*/", color: .systemGreen, source: source, layoutManager: layoutManager, range: fullRange)
+            apply("\\\"(?:\\\\.|[^\\\"])*\\\"|'(?:\\\\.|[^'])*'", color: .systemOrange, source: source, layoutManager: layoutManager, range: fullRange)
+            apply("\\b(?:alignas|auto|bool|break|case|catch|char|class|const|constexpr|continue|default|delete|do|double|else|enum|explicit|export|false|float|for|friend|if|inline|int|long|namespace|new|noexcept|nullptr|operator|private|protected|public|return|short|signed|sizeof|static|struct|switch|template|this|throw|true|try|typedef|typename|union|unsigned|using|virtual|void|volatile|while)\\b", color: .systemPurple, source: source, layoutManager: layoutManager, range: fullRange)
+            apply("#[[:space:]]*(?:include|define|if|ifdef|ifndef|endif|pragma)", color: .systemPink, source: source, layoutManager: layoutManager, range: fullRange)
+            textView.needsDisplay = true
+            textView.enclosingScrollView?.verticalRulerView?.needsDisplay = true
+        }
+
+        private func apply(_ pattern: String, color: NSColor, source: String, layoutManager: NSLayoutManager, range: NSRange) {
+            guard range.length > 0, let expression = try? NSRegularExpression(pattern: pattern) else { return }
+            expression.enumerateMatches(in: source, range: range) { match, _, _ in
+                if let matchRange = match?.range {
+                    layoutManager.addTemporaryAttribute(.foregroundColor, value: color, forCharacterRange: matchRange)
+                }
+            }
         }
 
     }
