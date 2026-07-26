@@ -38,11 +38,18 @@ jobs:
       - name: Create unsigned app bundle
         run: ./scripts/create-app-bundle.sh
 
-      # Download and open this `.app`, not the raw SwiftPM executable. It
-      # includes the icon, wallpaper assets, Info.plist and resource bundle.
+      # Keep the `.app` directory itself inside the GitHub artifact. Uploading
+      # the app path directly archives only `Contents/`, which Finder cannot
+      # recognise or launch as an application.
+      - name: Stage app artifact
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          cp -R ".build/release/Sameko IDE.app" dist/
+
       - name: Upload unsigned app
         uses: actions/upload-artifact@v4
         with:
           name: SamekoMac-unsigned-app
-          path: macos-swiftui/.build/release/Sameko IDE.app
+          path: macos-swiftui/dist
           if-no-files-found: error
