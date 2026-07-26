@@ -1,8 +1,15 @@
+import AppKit
 import SwiftUI
 
 @main
 struct SamekoMacApp: App {
     @State private var model = WorkspaceModel()
+
+    init() {
+        // Establish the AppKit appearance before SwiftUI creates the window so
+        // the native title bar and embedded controls never flash in light mode.
+        NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
+    }
 
     var body: some Scene {
         WindowGroup("Sameko IDE") {

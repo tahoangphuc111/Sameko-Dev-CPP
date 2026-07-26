@@ -2,8 +2,8 @@ import AppKit
 import SwiftUI
 
 /// AppKit-backed editor for the native app.  `TextEditor` is intentionally not
-/// used here: NSTextView lets us retain selection while applying lightweight
-/// C++ highlighting and provides a real line-number gutter.
+/// used here: NSTextView lets us retain selection and provides a real
+/// line-number gutter.
 struct NativeCodeEditor: NSViewRepresentable {
     @Binding var source: String
     @Binding var cursorPosition: String
@@ -20,10 +20,12 @@ struct NativeCodeEditor: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> NSScrollView {
-        // NSTextView's default frame is zero.  SwiftUI does not always assign
-        // it a usable document size through NSScrollView, leaving a blank code
-        // pane even though the model has source text.
-        let textView = CompletionTextView(frame: NSRect(x: 0, y: 0, width: 900, height: 600))
+        // Opt into TextKit 2 and never touch `layoutManager`. Reading that
+        // legacy property forces NSTextView into NSLayoutManager compatibility
+        // mode after its first frame; on macOS 26 that transition preserved the
+        // string and line fragments but stopped drawing every source glyph.
+        let textView = CompletionTextView(usingTextLayoutManager: true)
+        textView.frame = NSRect(x: 0, y: 0, width: 900, height: 600)
         textView.isRichText = false
         textView.isEditable = true
         textView.isSelectable = true
@@ -33,17 +35,18 @@ struct NativeCodeEditor: NSViewRepresentable {
         textView.isAutomaticTextReplacementEnabled = false
         textView.usesFindBar = true
         textView.delegate = context.coordinator
-        textView.requestCompletions = { [weak textView] line, column in
+        textView.requestCompletions = { [weak textView] (line: Int, column: Int) in
             guard let textView else { return }
             self.requestCompletions(line, column) { values in
                 DispatchQueue.main.async { textView.showCompletions(values) }
             }
         }
         configure(textView)
-        // Assign the source only after configuring typing attributes. Mutating
-        // NSTextStorage attributes after attachment to SwiftUI caused TextKit
-        // 1 to drop all glyphs on the next update in macOS 26.
-        textView.string = source
+        // Assign a fully styled source before attaching the text view to its
+        // scroll view. This keeps both the backing string and glyph attributes
+        // stable across the first SwiftUI update.
+        textView.textStorage?.setAttributedString(NSAttributedString(string: source, attributes: textView.typingAttributes))
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
 
         let scroll = NSScrollView()
         scroll.drawsBackground = true
@@ -56,7 +59,6 @@ struct NativeCodeEditor: NSViewRepresentable {
         scroll.verticalRulerView = LineNumberRulerView(textView: textView)
         scroll.hasVerticalRuler = true
         scroll.rulersVisible = true
-        context.coordinator.applySyntaxHighlighting(textView)
         context.coordinator.updateCursor(textView)
         return scroll
     }
@@ -64,20 +66,12 @@ struct NativeCodeEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let textView = scroll.documentView as? NSTextView else { return }
         context.coordinator.parent = self
-        configure(textView)
         if textView.string != source {
             let selection = textView.selectedRange()
-            textView.string = source
+            let styledSource = NSAttributedString(string: source, attributes: textView.typingAttributes)
+            textView.textStorage?.setAttributedString(styledSource)
             textView.setSelectedRange(NSRange(location: min(selection.location, (source as NSString).length), length: 0))
         }
-        textView.backgroundColor = backgroundColor
-        textView.textColor = foregroundColor
-        textView.insertionPointColor = accentColor
-        context.coordinator.applySyntaxHighlighting(textView)
-        if wordWrap {
-            textView.frame.size.width = max(1, scroll.contentSize.width)
-        }
-        scroll.hasHorizontalScroller = !wordWrap
         scroll.verticalRulerView?.needsDisplay = true
     }
 
@@ -130,7 +124,6 @@ struct NativeCodeEditor: NSViewRepresentable {
             guard let textView = notification.object as? NSTextView else { return }
             parent.source = textView.string
             parent.onSourceChange()
-            applySyntaxHighlighting(textView)
             updateCursor(textView)
         }
 
@@ -145,31 +138,6 @@ struct NativeCodeEditor: NSViewRepresentable {
             let column = (prefix.lastIndex(of: "\n").map { prefix.distance(from: $0, to: prefix.endIndex) } ?? prefix.count + 1)
             parent.cursorPosition = "Ln \(line), Col \(column)"
             parent.onCursorChange(line - 1, column - 1)
-        }
-
-        /// Uses layout-manager temporary attributes rather than mutating
-        /// NSTextStorage. Temporary attributes are display-only, so SwiftUI's
-        /// update cycle cannot invalidate the underlying TextKit glyph store.
-        func applySyntaxHighlighting(_ textView: NSTextView) {
-            guard let layoutManager = textView.layoutManager else { return }
-            let source = textView.string
-            let fullRange = NSRange(location: 0, length: (source as NSString).length)
-            layoutManager.removeTemporaryAttribute(.foregroundColor, forCharacterRange: fullRange)
-            apply("//.*|/\\*[\\s\\S]*?\\*/", color: .systemGreen, source: source, layoutManager: layoutManager, range: fullRange)
-            apply("\\\"(?:\\\\.|[^\\\"])*\\\"|'(?:\\\\.|[^'])*'", color: .systemOrange, source: source, layoutManager: layoutManager, range: fullRange)
-            apply("\\b(?:alignas|auto|bool|break|case|catch|char|class|const|constexpr|continue|default|delete|do|double|else|enum|explicit|export|false|float|for|friend|if|inline|int|long|namespace|new|noexcept|nullptr|operator|private|protected|public|return|short|signed|sizeof|static|struct|switch|template|this|throw|true|try|typedef|typename|union|unsigned|using|virtual|void|volatile|while)\\b", color: .systemPurple, source: source, layoutManager: layoutManager, range: fullRange)
-            apply("#[[:space:]]*(?:include|define|if|ifdef|ifndef|endif|pragma)", color: .systemPink, source: source, layoutManager: layoutManager, range: fullRange)
-            textView.needsDisplay = true
-            textView.enclosingScrollView?.verticalRulerView?.needsDisplay = true
-        }
-
-        private func apply(_ pattern: String, color: NSColor, source: String, layoutManager: NSLayoutManager, range: NSRange) {
-            guard range.length > 0, let expression = try? NSRegularExpression(pattern: pattern) else { return }
-            expression.enumerateMatches(in: source, range: range) { match, _, _ in
-                if let matchRange = match?.range {
-                    layoutManager.addTemporaryAttribute(.foregroundColor, value: color, forCharacterRange: matchRange)
-                }
-            }
         }
 
     }
@@ -241,23 +209,20 @@ private final class LineNumberRulerView: NSRulerView {
     required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func drawHashMarksAndLabels(in rect: NSRect) {
-        guard let textView, let layout = textView.layoutManager, let container = textView.textContainer else { return }
+        guard let textView, let font = textView.font else { return }
         NSColor.controlBackgroundColor.setFill(); rect.fill()
         let visible = textView.enclosingScrollView?.contentView.bounds ?? .zero
-        let glyphRange = layout.glyphRange(forBoundingRect: visible, in: container)
-        let string = textView.string as NSString
-        var index = layout.characterIndexForGlyph(at: glyphRange.location)
-        var line = string.substring(to: min(index, string.length)).filter { $0 == "\n" }.count + 1
+        let lineHeight = ceil(font.ascender - font.descender + font.leading + 3)
+        let topInset = textView.textContainerInset.height
+        let lineCount = max(1, textView.string.reduce(into: 1) { if $1 == "\n" { $0 += 1 } })
+        let firstLine = max(0, Int(floor((visible.minY - topInset) / lineHeight)))
+        let lastLine = min(lineCount - 1, Int(ceil((visible.maxY - topInset) / lineHeight)))
         let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor]
-        while index < NSMaxRange(glyphRange) {
-            let lineRange = string.lineRange(for: NSRange(location: index, length: 0))
-            let glyph = layout.glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
-            var lineRect = layout.lineFragmentRect(forGlyphAt: glyph.location, effectiveRange: nil)
-            lineRect.origin.y += textView.textContainerOrigin.y
-            let value = "\(line)" as NSString
-            value.draw(at: NSPoint(x: ruleThickness - value.size(withAttributes: attributes).width - 8, y: lineRect.minY + 2), withAttributes: attributes)
-            index = NSMaxRange(lineRange)
-            line += 1
+        guard firstLine <= lastLine else { return }
+        for lineIndex in firstLine...lastLine {
+            let value = "\(lineIndex + 1)" as NSString
+            let y = topInset + CGFloat(lineIndex) * lineHeight + 2
+            value.draw(at: NSPoint(x: ruleThickness - value.size(withAttributes: attributes).width - 8, y: y), withAttributes: attributes)
         }
     }
 }

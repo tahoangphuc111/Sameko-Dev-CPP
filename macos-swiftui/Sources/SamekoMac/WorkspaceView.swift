@@ -332,7 +332,7 @@ private struct CodeEditor: View {
                 model.requestCompletions(for: tabID, line: line, column: column, reply: reply)
             }
         )
-        .id("\(model.theme.rawValue)-\(model.editorFontSize)-\(model.editorTabSize)-\(model.editorWordWrap)")
+        .id("\(tabID)-\(model.theme.rawValue)-\(model.editorFontSize)-\(model.editorTabSize)-\(model.editorWordWrap)")
     }
 }
 
